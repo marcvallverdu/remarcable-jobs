@@ -60,11 +60,12 @@ export default async function OrganizationDetailPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
+  const resolvedSearchParams = await searchParams;
   const { organization, jobs, totalJobs, page, totalPages } = await getOrganization(
     params.id,
-    searchParams
+    resolvedSearchParams
   );
 
   return (
@@ -159,7 +160,7 @@ export default async function OrganizationDetailPage({
             <input
               type="text"
               name="search"
-              defaultValue={searchParams.search}
+              defaultValue={resolvedSearchParams.search}
               placeholder="Search jobs..."
               className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             />
@@ -169,7 +170,7 @@ export default async function OrganizationDetailPage({
             >
               Search
             </button>
-            {searchParams.search && (
+            {resolvedSearchParams.search && (
               <a
                 href={`/admin/organizations/${params.id}`}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm"
