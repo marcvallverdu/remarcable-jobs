@@ -6,13 +6,25 @@ interface Job {
   id: string;
   title: string;
   company: string;
+  organization?: string;
+  organization_url?: string;
   location: string;
+  locations_raw?: Array<Record<string, unknown>>;
   remote?: boolean;
+  remote_derived?: boolean;
   datePosted?: string;
+  date_posted?: string;
   isDuplicate?: boolean;
   employment_types?: string[];
+  employment_type?: string[];
   salary?: Record<string, unknown>;
+  salary_raw?: string | null;
   description?: string;
+  description_text?: string;
+  url?: string;
+  source?: string;
+  cities_derived?: string[];
+  countries_derived?: string[];
 }
 
 interface JobSelectionModalProps {
@@ -35,6 +47,7 @@ export default function JobSelectionModal({
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'new' | 'duplicate'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
 
   // Filter jobs that are not duplicates by default
   useEffect(() => {
@@ -87,6 +100,45 @@ export default function JobSelectionModal({
       newSelected.add(jobId);
     }
     setSelectedJobs(newSelected);
+  };
+
+  const toggleJobExpansion = (jobId: string) => {
+    const newExpanded = new Set(expandedJobs);
+    if (newExpanded.has(jobId)) {
+      newExpanded.delete(jobId);
+    } else {
+      newExpanded.add(jobId);
+    }
+    setExpandedJobs(newExpanded);
+  };
+
+  const getCompanyName = (job: Job) => {
+    return job.organization || job.company;
+  };
+
+  const getLocation = (job: Job) => {
+    if (job.cities_derived && job.cities_derived.length > 0) {
+      const city = job.cities_derived[0];
+      const country = job.countries_derived?.[0] || '';
+      return country ? `${city}, ${country}` : city;
+    }
+    return job.location;
+  };
+
+  const getEmploymentTypes = (job: Job) => {
+    return job.employment_type || job.employment_types || [];
+  };
+
+  const getDatePosted = (job: Job) => {
+    const date = job.date_posted || job.datePosted;
+    if (date) {
+      return new Date(date).toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+    }
+    return null;
   };
 
   const handleSave = async () => {
@@ -221,60 +273,168 @@ export default function JobSelectionModal({
             </div>
 
             <div className="space-y-2">
-              {filteredJobs.map((job) => (
-                <div
-                  key={job.id}
-                  className={`p-3 border rounded-lg ${
-                    job.isDuplicate 
-                      ? 'bg-orange-50 border-orange-200 opacity-60' 
-                      : 'bg-white border-gray-200 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-start">
-                    <input
-                      type="checkbox"
-                      checked={selectedJobs.has(job.id)}
-                      onChange={() => handleJobToggle(job.id, job.isDuplicate || false)}
-                      disabled={job.isDuplicate}
-                      className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
-                    />
-                    <div className="ml-3 flex-1">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="text-sm font-medium text-gray-900">
-                            {job.title}
-                            {job.isDuplicate && (
-                              <span className="ml-2 px-2 py-0.5 text-xs bg-orange-100 text-orange-700 rounded">
-                                Duplicate
-                              </span>
-                            )}
-                          </h4>
-                          <p className="text-sm text-gray-600">{job.company}</p>
-                          <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
-                            <span>{job.location}</span>
-                            {job.remote && (
-                              <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded">
-                                Remote
-                              </span>
-                            )}
-                            {job.employment_types && job.employment_types.length > 0 && (
-                              <span>{job.employment_types.join(', ')}</span>
-                            )}
-                            {job.datePosted && (
-                              <span>Posted: {new Date(job.datePosted).toLocaleDateString()}</span>
-                            )}
+              {filteredJobs.map((job) => {
+                const isExpanded = expandedJobs.has(job.id);
+                const companyName = getCompanyName(job);
+                const location = getLocation(job);
+                const employmentTypes = getEmploymentTypes(job);
+                const datePosted = getDatePosted(job);
+                const isRemote = job.remote_derived || job.remote;
+                
+                return (
+                  <div
+                    key={job.id}
+                    className={`border rounded-lg transition-all ${
+                      job.isDuplicate 
+                        ? 'bg-orange-50 border-orange-200 opacity-60' 
+                        : 'bg-white border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="p-3">
+                      <div className="flex items-start">
+                        <input
+                          type="checkbox"
+                          checked={selectedJobs.has(job.id)}
+                          onChange={() => handleJobToggle(job.id, job.isDuplicate || false)}
+                          disabled={job.isDuplicate}
+                          className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
+                        />
+                        <div className="ml-3 flex-1">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div 
+                                className="cursor-pointer"
+                                onClick={() => toggleJobExpansion(job.id)}
+                              >
+                                <h4 className="text-sm font-medium text-gray-900 hover:text-blue-600">
+                                  {job.title}
+                                  {job.isDuplicate && (
+                                    <span className="ml-2 px-2 py-0.5 text-xs bg-orange-100 text-orange-700 rounded">
+                                      Duplicate
+                                    </span>
+                                  )}
+                                </h4>
+                                <p className="text-sm text-gray-600 mt-1">{companyName}</p>
+                                <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
+                                  <span>{location}</span>
+                                  {isRemote && (
+                                    <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded">
+                                      Remote
+                                    </span>
+                                  )}
+                                  {employmentTypes.length > 0 && (
+                                    <span>{employmentTypes.join(', ')}</span>
+                                  )}
+                                  {datePosted && (
+                                    <span>Posted: {datePosted}</span>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {/* Expand/Collapse indicator */}
+                              <button
+                                onClick={() => toggleJobExpansion(job.id)}
+                                className="mt-2 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                              >
+                                <svg 
+                                  className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                                  fill="none" 
+                                  viewBox="0 0 24 24" 
+                                  stroke="currentColor"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                                {isExpanded ? 'Hide Details' : 'Show Details'}
+                              </button>
+                            </div>
                           </div>
-                          {job.description && (
-                            <p className="mt-1 text-xs text-gray-600 line-clamp-2">
-                              {job.description}
-                            </p>
-                          )}
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Expanded Details */}
+                    {isExpanded && (
+                      <div className="px-3 pb-3 border-t border-gray-100 mt-3">
+                        <div className="mt-3 space-y-3">
+                          {/* Company Information */}
+                          <div>
+                            <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Company</h5>
+                            <p className="mt-1 text-sm text-gray-900">{companyName}</p>
+                            {job.organization_url && (
+                              <a 
+                                href={job.organization_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 hover:text-blue-800"
+                              >
+                                View Company Website →
+                              </a>
+                            )}
+                          </div>
+                          
+                          {/* Location Details */}
+                          <div>
+                            <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Location</h5>
+                            <p className="mt-1 text-sm text-gray-900">{location}</p>
+                            {isRemote && (
+                              <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">
+                                Remote Work Available
+                              </span>
+                            )}
+                          </div>
+                          
+                          {/* Employment Details */}
+                          {(employmentTypes.length > 0 || job.salary_raw) && (
+                            <div>
+                              <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Employment Details</h5>
+                              {employmentTypes.length > 0 && (
+                                <p className="mt-1 text-sm text-gray-900">
+                                  Type: {employmentTypes.map(type => 
+                                    type.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
+                                  ).join(', ')}
+                                </p>
+                              )}
+                              {job.salary_raw && (
+                                <p className="mt-1 text-sm text-gray-900">Salary: {job.salary_raw}</p>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Job Description */}
+                          {(job.description_text || job.description) && (
+                            <div>
+                              <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Description</h5>
+                              <div className="mt-1 text-sm text-gray-900 max-h-40 overflow-y-auto p-2 bg-gray-50 rounded">
+                                {(job.description_text || job.description || '').split('\n').map((line, i) => (
+                                  <p key={i} className="mb-1">{line}</p>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Source Information */}
+                          <div>
+                            <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Source</h5>
+                            <p className="mt-1 text-sm text-gray-900">
+                              Platform: {job.source || 'Unknown'}
+                            </p>
+                            {job.url && (
+                              <a 
+                                href={job.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 hover:text-blue-800"
+                              >
+                                View Original Job Posting →
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {filteredJobs.length === 0 && (
