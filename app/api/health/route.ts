@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/prisma';
 
 export async function GET() {
+  // Force garbage collection if available (helps in production)
+  if (global.gc) {
+    global.gc();
+  }
   const health = {
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -16,6 +19,9 @@ export async function GET() {
   };
 
   try {
+    // Lazy load prisma only when needed
+    const { prisma } = await import('@/lib/db/prisma');
+    
     // Check database connection
     const startTime = Date.now();
     await prisma.$queryRaw`SELECT 1`;

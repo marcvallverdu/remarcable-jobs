@@ -1,0 +1,19 @@
+{
+  "functions": {
+    "app/api/health/route.ts": {
+      "maxDuration": 10
+    },
+    "app/api/health-lite/route.ts": {
+      "maxDuration": 5
+    },
+    "app/api/v1/*/route.ts": {
+      "maxDuration": 10
+    },
+    "app/api/admin/*/route.ts": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "NODE_OPTIONS": "--max-old-space-size=512"
+  }
+}

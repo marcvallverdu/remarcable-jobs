@@ -4,17 +4,36 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Configure Prisma with connection pooling and limits
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
+function createPrismaClient() {
+  // Parse connection URL to add pooling parameters
+  const databaseUrl = process.env.DATABASE_URL || '';
+  
+  // Add connection pool limits for serverless
+  const url = new URL(databaseUrl);
+  url.searchParams.set('connection_limit', '1'); // Minimal connections
+  url.searchParams.set('pool_timeout', '2'); // Quick timeout
+  
+  return new PrismaClient({
+    datasources: {
+      db: {
+        url: url.toString(),
+      },
     },
-  },
-  // Optimize for serverless environments
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-});
+    // Minimal logging to reduce memory
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+    // Error formatting uses less memory
+    errorFormat: 'minimal',
+  });
+}
 
-// CRITICAL: Cache the client in all environments to prevent memory leaks
-// In serverless/edge environments, this prevents creating new connections per request
-globalForPrisma.prisma = prisma;
+// Lazy initialization - only create when needed
+if (!globalForPrisma.prisma) {
+  globalForPrisma.prisma = createPrismaClient();
+}
+
+export const prisma = globalForPrisma.prisma;
+
+// Cleanup function for serverless environments
+export async function disconnectPrisma() {
+  await prisma.$disconnect();
+}
