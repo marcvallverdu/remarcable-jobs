@@ -34,17 +34,16 @@ A comprehensive job aggregation and management platform built with Next.js, feat
 
 ```
 remarcable-jobs/
-├── app/
-│   └── nextjs-app/
-│       ├── app/              # Next.js app directory
-│       │   ├── admin/         # Admin dashboard pages
-│       │   ├── api/           # API routes
-│       │   └── auth/          # Authentication pages
-│       ├── components/        # Reusable React components
-│       ├── lib/              # Utility libraries
-│       │   └── fantastic-jobs/ # RapidAPI client
-│       ├── prisma/           # Database schema and migrations
-│       └── public/           # Static assets
+├── app/                      # Next.js app directory
+│   ├── admin/                # Admin dashboard pages
+│   ├── api/                  # API routes
+│   └── auth/                 # Authentication pages
+├── components/               # Reusable React components
+├── lib/                      # Utility libraries
+│   └── fantastic-jobs/       # RapidAPI client
+├── prisma/                   # Database schema and migrations
+├── public/                   # Static assets
+├── scripts/                  # Utility scripts
 ├── plan.md                   # Project planning document
 └── sample-response.json      # API response examples
 ```
@@ -61,13 +60,12 @@ remarcable-jobs/
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/remarcable-jobs.git
+git clone https://github.com/marcvallverdu/remarcable-jobs.git
 cd remarcable-jobs
 ```
 
 2. Install dependencies:
 ```bash
-cd app/nextjs-app
 npm install
 ```
 
