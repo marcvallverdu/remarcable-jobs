@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
+import Image from 'next/image';
 
 interface SearchParams {
   page?: string;
@@ -84,11 +85,14 @@ export default async function AdminOrganizationsPage({
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 {org.logo && (
-                  <img
-                    src={org.logo}
-                    alt={org.name}
-                    className="h-12 w-12 mb-3 rounded"
-                  />
+                  <div className="relative h-12 w-12 mb-3">
+                    <Image
+                      src={org.logo}
+                      alt={org.name}
+                      fill
+                      className="rounded object-contain"
+                    />
+                  </div>
                 )}
                 <h3 className="text-lg font-medium text-gray-900">
                   {org.name}

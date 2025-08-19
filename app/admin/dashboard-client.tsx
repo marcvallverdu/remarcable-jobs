@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Stats {
   totalJobs: number;
@@ -81,11 +82,14 @@ export default function AdminDashboardClient({ stats }: Props) {
                       <div className="px-4 py-4 sm:px-6 flex items-center justify-between">
                         <div className="flex items-center">
                           {org.logo && (
-                            <img
-                              className="h-10 w-10 rounded-full mr-3"
-                              src={org.logo}
-                              alt={org.name}
-                            />
+                            <div className="relative h-10 w-10 mr-3 flex-shrink-0">
+                              <Image
+                                src={org.logo}
+                                alt={org.name}
+                                fill
+                                className="rounded-full object-contain"
+                              />
+                            </div>
                           )}
                           <div>
                             <p className="text-sm font-medium text-gray-900">{org.name}</p>

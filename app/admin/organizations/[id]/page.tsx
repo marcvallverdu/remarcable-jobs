@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db/prisma';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface SearchParams {
   page?: string;
@@ -73,11 +74,14 @@ export default async function OrganizationDetailPage({
         <div className="flex items-start justify-between">
           <div className="flex items-start space-x-4">
             {organization.logo && (
-              <img
-                src={organization.logo}
-                alt={organization.name}
-                className="h-16 w-16 rounded"
-              />
+              <div className="relative h-16 w-16 flex-shrink-0">
+                <Image
+                  src={organization.logo}
+                  alt={organization.name}
+                  fill
+                  className="rounded object-contain"
+                />
+              </div>
             )}
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{organization.name}</h1>

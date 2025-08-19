@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Job {
   id: string;
@@ -208,11 +209,14 @@ export default function JobDetailClient({ job }: { job: Job }) {
             
             <div className="space-y-3">
               {job.organization.logo && (
-                <img
-                  src={job.organization.logo}
-                  alt={job.organization.name}
-                  className="h-16 w-16 rounded"
-                />
+                <div className="relative h-16 w-16 flex-shrink-0">
+                  <Image
+                    src={job.organization.logo}
+                    alt={job.organization.name}
+                    fill
+                    className="rounded object-contain"
+                  />
+                </div>
               )}
               
               <div>
