@@ -35,7 +35,7 @@ export async function POST() {
       body: {
         email: adminUser.email,
         password: 'TempPassword123!', // Temporary password
-        name: adminUser.name,
+        name: adminUser.name || 'Admin',
       },
       asResponse: false,
     }).catch(async (error) => {
