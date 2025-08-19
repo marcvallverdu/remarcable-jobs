@@ -5,7 +5,12 @@ import { checkRateLimit } from './lib/rate-limiter';
 export async function middleware(request: NextRequest) {
   const origin = request.headers.get('origin');
   
-  // Handle CORS for API routes
+  // Skip middleware CORS for auth routes - they handle their own CORS
+  if (request.nextUrl.pathname.startsWith('/api/auth/')) {
+    return NextResponse.next();
+  }
+  
+  // Handle CORS for other API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
     // Handle preflight requests
     if (request.method === 'OPTIONS') {

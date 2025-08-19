@@ -1,45 +1,43 @@
 import { auth } from '@/lib/auth/auth';
 import { toNextJsHandler } from 'better-auth/next-js';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 const handlers = toNextJsHandler(auth);
 
-// Add CORS headers to responses
-function addCorsHeaders(response: Response, origin: string | null) {
-  const headers = new Headers(response.headers);
+// Handle OPTIONS preflight requests
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  const response = new NextResponse(null, { status: 200 });
   
   // Allow specific origins
   const allowedOrigins = [
     'https://remarcablejobs.com',
     'https://www.remarcablejobs.com',
     'https://remarcable-jobs.vercel.app',
+    'http://localhost:3000',
   ];
   
   if (origin && allowedOrigins.includes(origin)) {
-    headers.set('Access-Control-Allow-Origin', origin);
+    response.headers.set('Access-Control-Allow-Origin', origin);
+  } else if (!origin) {
+    // Allow if no origin (same-origin requests)
+    response.headers.set('Access-Control-Allow-Origin', '*');
   }
   
-  headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  headers.set('Access-Control-Allow-Credentials', 'true');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+  response.headers.set('Access-Control-Max-Age', '86400');
   
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
+  return response;
 }
 
+// Handle GET requests
 export async function GET(request: NextRequest) {
-  const response = await handlers.GET(request);
-  return addCorsHeaders(response, request.headers.get('origin'));
+  return handlers.GET(request);
 }
 
+// Handle POST requests
 export async function POST(request: NextRequest) {
-  const response = await handlers.POST(request);
-  return addCorsHeaders(response, request.headers.get('origin'));
-}
-
-export async function OPTIONS(request: NextRequest) {
-  return addCorsHeaders(new Response(null, { status: 200 }), request.headers.get('origin'));
+  return handlers.POST(request);
 }
