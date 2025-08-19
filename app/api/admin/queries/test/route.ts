@@ -141,7 +141,8 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    const jobs = response.data.data || response.data.jobs || [];
+    // The API returns an array directly in response.data
+    const jobs = Array.isArray(response.data) ? response.data : (response.data.data || response.data.jobs || []);
     
     // Check for duplicates in database
     const jobIds = jobs.map((job: Record<string, unknown>) => job.id).filter(Boolean);
