@@ -18,49 +18,65 @@ export async function GET(request: NextRequest) {
     const searchParams = Object.fromEntries(request.nextUrl.searchParams);
     const params = querySchema.parse(searchParams);
     
-    const where: Record<string, unknown> = {
+    const andConditions: Array<Record<string, unknown>> = [
       // Exclude expired jobs by default
-      expiredAt: null,
-    };
+      { expiredAt: null },
+    ];
     
     // Filter by job board if specified
     if (params.boardSlug) {
-      where.jobBoards = {
-        some: {
-          jobBoard: {
-            slug: params.boardSlug,
-            isActive: true,
+      andConditions.push({
+        jobBoards: {
+          some: {
+            jobBoard: {
+              slug: params.boardSlug,
+              isActive: true,
+            },
           },
         },
-      };
+      });
     }
     
+    // Location filter - checks cities, regions, or countries
     if (params.location) {
-      where.OR = [
-        { cities: { has: params.location } },
-        { regions: { has: params.location } },
-        { countries: { has: params.location } },
-      ];
+      andConditions.push({
+        OR: [
+          { cities: { has: params.location } },
+          { regions: { has: params.location } },
+          { countries: { has: params.location } },
+        ],
+      });
     }
     
     if (params.remote !== undefined) {
-      where.isRemote = params.remote;
+      andConditions.push({ isRemote: params.remote });
     }
     
     if (params.employmentType) {
-      where.employmentType = { has: params.employmentType };
+      andConditions.push({ employmentType: { has: params.employmentType } });
     }
     
+    // Search filter - searches in title and description
     if (params.search) {
-      where.OR = [
-        { title: { contains: params.search, mode: 'insensitive' } },
-        { descriptionText: { contains: params.search, mode: 'insensitive' } },
-      ];
+      andConditions.push({
+        OR: [
+          { title: { contains: params.search, mode: 'insensitive' } },
+          { descriptionText: { contains: params.search, mode: 'insensitive' } },
+          {
+            organization: {
+              name: { contains: params.search, mode: 'insensitive' },
+            },
+          },
+        ],
+      });
     }
     
+    // Organization filter
     if (params.organizationId) {
-      where.organizationId = params.organizationId;
+      andConditions.push({ organizationId: params.organizationId });
     }
+    
+    const where = andConditions.length > 1 ? { AND: andConditions } : andConditions[0];
     
     const skip = (params.page - 1) * params.limit;
     
