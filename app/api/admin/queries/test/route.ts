@@ -47,13 +47,26 @@ export async function POST(request: NextRequest) {
     // Build query parameters for RapidAPI
     const queryParams: Record<string, string> = {};
 
-    // Core search parameters with correct field names
+    // Map our form field names to RapidAPI parameter names
+    // Handle both old field names (for backwards compatibility) and new field names
+    
+    // Title search - map 'title' to 'title_filter'
+    if (parameters.title) queryParams.title_filter = parameters.title;
     if (parameters.title_filter) queryParams.title_filter = parameters.title_filter;
     if (parameters.advanced_title_filter) queryParams.advanced_title_filter = parameters.advanced_title_filter;
+    
+    // Location search - map 'location' to 'location_filter'
+    if (parameters.location) queryParams.location_filter = parameters.location;
     if (parameters.location_filter) queryParams.location_filter = parameters.location_filter;
+    
+    // Organization/Company search - map 'company' to 'organization_filter'
+    if (parameters.company) queryParams.organization_filter = parameters.company;
     if (parameters.organization_filter) queryParams.organization_filter = parameters.organization_filter;
     if (parameters.advanced_organization_filter) queryParams.advanced_organization_filter = parameters.advanced_organization_filter;
     if (parameters.organization_exclusion_filter) queryParams.organization_exclusion_filter = parameters.organization_exclusion_filter;
+    
+    // Description search - 'query' field can be used as description_filter
+    if (parameters.query) queryParams.description_filter = parameters.query;
     if (parameters.description_filter) queryParams.description_filter = parameters.description_filter;
     if (parameters.advanced_description_filter) queryParams.advanced_description_filter = parameters.advanced_description_filter;
     

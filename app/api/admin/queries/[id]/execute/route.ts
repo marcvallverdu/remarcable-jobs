@@ -67,37 +67,86 @@ export async function POST(
     // Build query parameters for RapidAPI
     const queryParams: Record<string, string> = {};
 
-    // Add search parameters
-    if (parameters.query) queryParams.query = parameters.query;
-    if (parameters.title) queryParams.title = parameters.title;
-    if (parameters.company) queryParams.company = parameters.company;
-    if (parameters.location) queryParams.location = parameters.location;
-    if (parameters.country) queryParams.country = parameters.country;
+    // Map our form field names to RapidAPI parameter names
+    // Title search - map 'title' to 'title_filter'
+    if (parameters.title) queryParams.title_filter = parameters.title as string;
+    if (parameters.title_filter) queryParams.title_filter = parameters.title_filter as string;
+    if (parameters.advanced_title_filter) queryParams.advanced_title_filter = parameters.advanced_title_filter as string;
+    
+    // Location search - map 'location' to 'location_filter'
+    if (parameters.location) queryParams.location_filter = parameters.location as string;
+    if (parameters.location_filter) queryParams.location_filter = parameters.location_filter as string;
+    
+    // Organization/Company search - map 'company' to 'organization_filter'
+    if (parameters.company) queryParams.organization_filter = parameters.company as string;
+    if (parameters.organization_filter) queryParams.organization_filter = parameters.organization_filter as string;
+    if (parameters.advanced_organization_filter) queryParams.advanced_organization_filter = parameters.advanced_organization_filter as string;
+    
+    // Description search - 'query' field can be used as description_filter
+    if (parameters.query) queryParams.description_filter = parameters.query as string;
+    if (parameters.description_filter) queryParams.description_filter = parameters.description_filter as string;
+    if (parameters.advanced_description_filter) queryParams.advanced_description_filter = parameters.advanced_description_filter as string;
+    
+    // Country doesn't need mapping
+    if (parameters.country) queryParams.country = parameters.country as string;
     
     // Add filters
-    if (parameters.remote) queryParams.remote = parameters.remote;
-    if (parameters.employment_types?.length > 0) {
+    if (parameters.remote !== undefined && parameters.remote !== '') {
+      queryParams.remote = parameters.remote as string;
+    }
+    if (parameters.source) queryParams.source = parameters.source as string;
+    if (parameters.description_type) queryParams.description_type = parameters.description_type as string;
+    if (parameters.date_filter) queryParams.date_filter = parameters.date_filter as string;
+    if (parameters.organization_exclusion_filter) queryParams.organization_exclusion_filter = parameters.organization_exclusion_filter as string;
+    
+    // AI filters
+    if (parameters.include_ai) queryParams.include_ai = (parameters.include_ai as boolean).toString();
+    if (parameters.ai_employment_type_filter) queryParams.ai_employment_type_filter = parameters.ai_employment_type_filter as string;
+    if (parameters.ai_work_arrangement_filter) queryParams.ai_work_arrangement_filter = parameters.ai_work_arrangement_filter as string;
+    if (parameters.ai_has_salary) queryParams.ai_has_salary = (parameters.ai_has_salary as boolean).toString();
+    if (parameters.ai_experience_level_filter) queryParams.ai_experience_level_filter = parameters.ai_experience_level_filter as string;
+    if (parameters.ai_visa_sponsorship_filter) queryParams.ai_visa_sponsorship_filter = (parameters.ai_visa_sponsorship_filter as boolean).toString();
+    
+    // LinkedIn filters
+    if (parameters.include_li) queryParams.include_li = (parameters.include_li as boolean).toString();
+    if (parameters.li_organization_slug_filter) queryParams.li_organization_slug_filter = parameters.li_organization_slug_filter as string;
+    if (parameters.li_organization_slug_exclusion_filter) queryParams.li_organization_slug_exclusion_filter = parameters.li_organization_slug_exclusion_filter as string;
+    if (parameters.li_industry_filter) queryParams.li_industry_filter = parameters.li_industry_filter as string;
+    if (parameters.li_organization_specialties_filter) queryParams.li_organization_specialties_filter = parameters.li_organization_specialties_filter as string;
+    if (parameters.li_organization_description_filter) queryParams.li_organization_description_filter = parameters.li_organization_description_filter as string;
+    if (parameters.li_organization_employees_gte) queryParams.li_organization_employees_gte = (parameters.li_organization_employees_gte as number).toString();
+    if (parameters.li_organization_employees_lte) queryParams.li_organization_employees_lte = (parameters.li_organization_employees_lte as number).toString();
+    
+    // Legacy fields (keeping for backwards compatibility)
+    if (parameters.employment_types && Array.isArray(parameters.employment_types) && parameters.employment_types.length > 0) {
       queryParams.employment_types = parameters.employment_types.join(',');
     }
-    if (parameters.seniority_levels?.length > 0) {
+    if (parameters.seniority_levels && Array.isArray(parameters.seniority_levels) && parameters.seniority_levels.length > 0) {
       queryParams.seniority_levels = parameters.seniority_levels.join(',');
     }
-    if (parameters.date_posted) queryParams.date_posted = parameters.date_posted;
+    if (parameters.date_posted) queryParams.date_posted = parameters.date_posted as string;
     
     // Add exclusions
     if (parameters.exclude_job_boards) {
       queryParams.exclude_job_boards = 'true';
     }
     if (parameters.companies_exclude) {
-      queryParams.companies_exclude = parameters.companies_exclude;
+      queryParams.companies_exclude = parameters.companies_exclude as string;
     }
     if (parameters.title_exclude) {
-      queryParams.title_exclude = parameters.title_exclude;
+      queryParams.title_exclude = parameters.title_exclude as string;
     }
     
-    // Add pagination
-    queryParams.page = (parameters.page || 1).toString();
-    queryParams.num_pages = (parameters.num_pages || 1).toString();
+    // Pagination - use limit/offset if available, otherwise use page/num_pages
+    if (parameters.limit) {
+      queryParams.limit = (parameters.limit as number).toString();
+      queryParams.offset = ((parameters.offset as number) || 0).toString();
+    } else {
+      queryParams.page = ((parameters.page as number) || 1).toString();
+      queryParams.num_pages = ((parameters.num_pages as number) || 1).toString();
+    }
+
+    console.log('Sending query params to RapidAPI:', queryParams);
 
     // Make request to RapidAPI
     const response = await axios.get(
@@ -112,7 +161,7 @@ export async function POST(
       }
     );
 
-    const jobs = response.data.jobs || [];
+    const jobs = response.data.data || response.data.jobs || [];
     
     // Check for duplicates in database
     const externalIds = jobs.map((job: Record<string, unknown>) => job.id as string);
