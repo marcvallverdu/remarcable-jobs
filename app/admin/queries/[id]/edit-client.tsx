@@ -90,8 +90,6 @@ export default function EditQueryClient({ query }: { query: Query }) {
       source: (query.parameters?.source as string) || '',
       
       // Pagination
-      page: (query.parameters?.page as number) || 1,
-      num_pages: (query.parameters?.num_pages as number) || 1,
       limit: (query.parameters?.limit as number) || 10,
       offset: (query.parameters?.offset as number) || 0,
       
@@ -1031,44 +1029,6 @@ export default function EditQueryClient({ query }: { query: Query }) {
                   />
                   <p className="mt-1 text-xs text-gray-500">
                     Skip this many results (for pagination)
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="page" className="block text-sm font-medium text-gray-700">
-                    Starting Page (Legacy)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={formData.parameters.page}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      parameters: { ...formData.parameters, page: parseInt(e.target.value) || 1 }
-                    })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="num_pages" className="block text-sm font-medium text-gray-700">
-                    Number of Pages (Legacy)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={formData.parameters.num_pages}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      parameters: { ...formData.parameters, num_pages: parseInt(e.target.value) || 1 }
-                    })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Fetches multiple pages in one request
                   </p>
                 </div>
               </div>
