@@ -28,6 +28,11 @@ export const auth = betterAuth({
     },
   },
   trustedOrigins: process.env.NODE_ENV === 'production' 
-    ? [process.env.NEXT_PUBLIC_APP_URL || ''].filter(Boolean)
+    ? [
+        'https://remarcablejobs.com',
+        'https://www.remarcablejobs.com',
+        'https://remarcable-jobs.vercel.app',
+        process.env.NEXT_PUBLIC_APP_URL || '',
+      ].filter(Boolean)
     : ['http://localhost:3000'],
 });
