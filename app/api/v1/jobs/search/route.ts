@@ -18,13 +18,19 @@ export async function GET(request: NextRequest) {
     const [jobs, total] = await Promise.all([
       prisma.job.findMany({
         where: {
-          OR: [
-            { title: { contains: params.q, mode: 'insensitive' } },
-            { descriptionText: { contains: params.q, mode: 'insensitive' } },
+          AND: [
+            // Exclude expired jobs
+            { expiredAt: null },
             {
-              organization: {
-                name: { contains: params.q, mode: 'insensitive' },
-              },
+              OR: [
+                { title: { contains: params.q, mode: 'insensitive' } },
+                { descriptionText: { contains: params.q, mode: 'insensitive' } },
+                {
+                  organization: {
+                    name: { contains: params.q, mode: 'insensitive' },
+                  },
+                },
+              ],
             },
           ],
         },
@@ -44,13 +50,19 @@ export async function GET(request: NextRequest) {
       }),
       prisma.job.count({
         where: {
-          OR: [
-            { title: { contains: params.q, mode: 'insensitive' } },
-            { descriptionText: { contains: params.q, mode: 'insensitive' } },
+          AND: [
+            // Exclude expired jobs
+            { expiredAt: null },
             {
-              organization: {
-                name: { contains: params.q, mode: 'insensitive' },
-              },
+              OR: [
+                { title: { contains: params.q, mode: 'insensitive' } },
+                { descriptionText: { contains: params.q, mode: 'insensitive' } },
+                {
+                  organization: {
+                    name: { contains: params.q, mode: 'insensitive' },
+                  },
+                },
+              ],
             },
           ],
         },

@@ -13,7 +13,8 @@ async function getLogs(userId: string, searchParams: SearchParams) {
   const limit = 50;
   const skip = (page - 1) * limit;
   
-  const where: Record<string, unknown> = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const where: any = {};
   
   // Filter by status
   if (searchParams.status) {
@@ -22,10 +23,10 @@ async function getLogs(userId: string, searchParams: SearchParams) {
   
   // Filter by query
   if (searchParams.queryId) {
-    where.queryId = searchParams.queryId;
+    where.savedQueryId = searchParams.queryId;
   } else {
     // Only show logs for queries created by this user
-    where.query = {
+    where.savedQuery = {
       createdBy: userId,
     };
   }
@@ -36,7 +37,7 @@ async function getLogs(userId: string, searchParams: SearchParams) {
       skip,
       take: limit,
       include: {
-        query: {
+        savedQuery: {
           select: {
             id: true,
             name: true,
@@ -65,8 +66,9 @@ async function getLogs(userId: string, searchParams: SearchParams) {
 export default async function AdminLogsPage({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
+  const resolvedSearchParams = await searchParams;
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -77,7 +79,7 @@ export default async function AdminLogsPage({
 
   const { logs, total, page, totalPages, queries } = await getLogs(
     session.user.id,
-    searchParams
+    resolvedSearchParams
   );
 
   return (
@@ -99,7 +101,7 @@ export default async function AdminLogsPage({
             <select
               name="queryId"
               id="queryId"
-              defaultValue={searchParams.queryId}
+              defaultValue={resolvedSearchParams.queryId}
               className="mt-1 block w-48 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             >
               <option value="">All Queries</option>
@@ -118,7 +120,7 @@ export default async function AdminLogsPage({
             <select
               name="status"
               id="status"
-              defaultValue={searchParams.status}
+              defaultValue={resolvedSearchParams.status}
               className="mt-1 block w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             >
               <option value="">All</option>
@@ -165,7 +167,7 @@ export default async function AdminLogsPage({
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Results
+                    Jobs Fetched
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Duration
@@ -187,12 +189,16 @@ export default async function AdminLogsPage({
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <a
-                        href={`/admin/queries/${log.queryId}`}
-                        className="text-indigo-600 hover:text-indigo-900"
-                      >
-                        {log.query.name}
-                      </a>
+                      {log.savedQuery ? (
+                        <a
+                          href={`/admin/queries/${log.savedQueryId}`}
+                          className="text-indigo-600 hover:text-indigo-900"
+                        >
+                          {log.savedQuery.name}
+                        </a>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -206,7 +212,7 @@ export default async function AdminLogsPage({
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {log.resultCount !== null ? `${log.resultCount} jobs` : '-'}
+                      {log.jobsFetched ? `${log.jobsFetched} jobs` : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {log.duration ? `${log.duration}ms` : '-'}
@@ -218,16 +224,6 @@ export default async function AdminLogsPage({
                             {log.errorMessage}
                           </p>
                         </div>
-                      )}
-                      {log.responseData && (
-                        <details className="cursor-pointer">
-                          <summary className="text-indigo-600 hover:text-indigo-900">
-                            View Response
-                          </summary>
-                          <pre className="mt-2 text-xs bg-gray-50 p-2 rounded overflow-x-auto max-w-md">
-                            {JSON.stringify(log.responseData, null, 2)}
-                          </pre>
-                        </details>
                       )}
                     </td>
                   </tr>
@@ -244,7 +240,7 @@ export default async function AdminLogsPage({
           <nav className="flex space-x-2">
             {page > 1 && (
               <a
-                href={`?page=${page - 1}${searchParams.status ? `&status=${searchParams.status}` : ''}${searchParams.queryId ? `&queryId=${searchParams.queryId}` : ''}`}
+                href={`?page=${page - 1}${resolvedSearchParams.status ? `&status=${resolvedSearchParams.status}` : ''}${resolvedSearchParams.queryId ? `&queryId=${resolvedSearchParams.queryId}` : ''}`}
                 className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Previous
@@ -255,7 +251,7 @@ export default async function AdminLogsPage({
             </span>
             {page < totalPages && (
               <a
-                href={`?page=${page + 1}${searchParams.status ? `&status=${searchParams.status}` : ''}${searchParams.queryId ? `&queryId=${searchParams.queryId}` : ''}`}
+                href={`?page=${page + 1}${resolvedSearchParams.status ? `&status=${resolvedSearchParams.status}` : ''}${resolvedSearchParams.queryId ? `&queryId=${resolvedSearchParams.queryId}` : ''}`}
                 className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Next

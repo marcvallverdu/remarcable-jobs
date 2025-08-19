@@ -6,6 +6,7 @@ const querySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
   search: z.string().optional(),
+  boardSlug: z.string().optional(), // Filter by job board slug
 });
 
 export async function GET(request: NextRequest) {
@@ -13,7 +14,19 @@ export async function GET(request: NextRequest) {
     const searchParams = Object.fromEntries(request.nextUrl.searchParams);
     const params = querySchema.parse(searchParams);
     
-    const where: any = {};
+    const where: Record<string, unknown> = {};
+    
+    // Filter by job board if specified
+    if (params.boardSlug) {
+      where.jobBoards = {
+        some: {
+          jobBoard: {
+            slug: params.boardSlug,
+            isActive: true,
+          },
+        },
+      };
+    }
     
     if (params.search) {
       where.OR = [

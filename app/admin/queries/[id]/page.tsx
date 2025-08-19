@@ -23,9 +23,10 @@ async function getQuery(id: string) {
 export default async function EditQueryPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const query = await getQuery(params.id);
+  const { id } = await params;
+  const query = await getQuery(id);
 
   return <EditQueryClient query={query} />;
 }

@@ -1,5 +1,5 @@
 import { FantasticJobsResponse } from './types';
-import { Organization, Job, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 export function mapApiToOrganization(
   apiJob: FantasticJobsResponse
@@ -39,7 +39,8 @@ export function mapApiToJob(
     organization: {
       connect: { id: organizationId }
     },
-    locationsRaw: apiJob.locations_raw as any || null,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    locationsRaw: apiJob.locations_raw as any || undefined,
     cities: apiJob.cities_derived || [],
     counties: apiJob.counties_derived || [],
     regions: apiJob.regions_derived || [],
@@ -50,7 +51,8 @@ export function mapApiToJob(
     longitude: apiJob.lngs_derived || [],
     isRemote: apiJob.remote_derived || false,
     employmentType: apiJob.employment_type || [],
-    salaryRaw: apiJob.salary_raw as any || null,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    salaryRaw: apiJob.salary_raw as any || undefined,
     url: apiJob.url,
     descriptionText: apiJob.description_text,
     sourceType: apiJob.source_type || null,

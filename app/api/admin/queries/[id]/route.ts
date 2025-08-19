@@ -5,8 +5,9 @@ import { prisma } from '@/lib/db/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -20,7 +21,7 @@ export async function GET(
     }
 
     const query = await prisma.savedQuery.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         fetchLogs: {
           orderBy: { createdAt: 'desc' },
@@ -48,8 +49,9 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -77,7 +79,7 @@ export async function PUT(
     const body = await request.json();
     
     const query = await prisma.savedQuery.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name: body.name,
         description: body.description || null,
@@ -98,8 +100,9 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -126,12 +129,12 @@ export async function DELETE(
 
     // Delete associated fetch logs first
     await prisma.fetchLog.deleteMany({
-      where: { savedQueryId: params.id },
+      where: { savedQueryId: id },
     });
 
     // Then delete the query
     await prisma.savedQuery.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ success: true });

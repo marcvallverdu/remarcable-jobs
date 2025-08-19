@@ -27,7 +27,8 @@ async function getOrganization(id: string, searchParams: SearchParams) {
   const limit = 20;
   const skip = (page - 1) * limit;
   
-  const jobWhere: Record<string, unknown> = { organizationId: id };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const jobWhere: any = { organizationId: id };
   
   if (searchParams.search) {
     jobWhere.OR = [
@@ -59,12 +60,12 @@ export default async function OrganizationDetailPage({
   params,
   searchParams,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
   searchParams: Promise<SearchParams>;
 }) {
-  const resolvedSearchParams = await searchParams;
+  const [{ id }, resolvedSearchParams] = await Promise.all([params, searchParams]);
   const { organization, jobs, totalJobs, page, totalPages } = await getOrganization(
-    params.id,
+    id,
     resolvedSearchParams
   );
 
@@ -117,7 +118,7 @@ export default async function OrganizationDetailPage({
           <div>
             <dt className="text-sm font-medium text-gray-500">Founded</dt>
             <dd className="mt-1 text-sm text-gray-900">
-              {organization.linkedinFounded || 'Not specified'}
+              {organization.linkedinFoundedDate || 'Not specified'}
             </dd>
           </div>
           <div>
@@ -133,9 +134,9 @@ export default async function OrganizationDetailPage({
             </dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">External ID</dt>
+            <dt className="text-sm font-medium text-gray-500">Internal ID</dt>
             <dd className="mt-1 text-sm text-gray-900 font-mono text-xs">
-              {organization.externalId}
+              {organization.id}
             </dd>
           </div>
         </div>
@@ -172,7 +173,7 @@ export default async function OrganizationDetailPage({
             </button>
             {resolvedSearchParams.search && (
               <a
-                href={`/admin/organizations/${params.id}`}
+                href={`/admin/organizations/${id}`}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm"
               >
                 Clear
@@ -188,13 +189,20 @@ export default async function OrganizationDetailPage({
         ) : (
           <div className="bg-white shadow overflow-hidden sm:rounded-md">
             <ul className="divide-y divide-gray-200">
-              {jobs.map((job) => (
-                <li key={job.id}>
+              {jobs.map((job) => {
+                const isExpired = job.expiredAt !== null;
+                return (
+                <li key={job.id} className={isExpired ? 'opacity-60 bg-gray-50' : ''}>
                   <div className="px-4 py-4 sm:px-6">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <Link href={`/admin/jobs/${job.id}`} className="text-sm font-medium text-indigo-600 hover:text-indigo-900">
                           {job.title}
+                          {isExpired && (
+                            <span className="ml-2 px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">
+                              EXPIRED
+                            </span>
+                          )}
                         </Link>
                         <div className="mt-2 flex items-center text-sm text-gray-500">
                           <span>
@@ -208,8 +216,13 @@ export default async function OrganizationDetailPage({
                         </div>
                         <p className="mt-1 text-xs text-gray-500">
                           Posted: {new Date(job.datePosted).toLocaleDateString()}
-                          {job.dateUpdated && job.dateUpdated !== job.datePosted && (
-                            <> • Updated: {new Date(job.dateUpdated).toLocaleDateString()}</>
+                          {job.updatedAt && job.updatedAt !== job.createdAt && (
+                            <> • Updated: {new Date(job.updatedAt).toLocaleDateString()}</>
+                          )}
+                          {isExpired && job.expiredAt && (
+                            <span className="ml-3 text-red-600 font-medium">
+                              • Expired: {new Date(job.expiredAt).toLocaleDateString()}
+                            </span>
                           )}
                         </p>
                         {job.descriptionText && (
@@ -237,7 +250,8 @@ export default async function OrganizationDetailPage({
                     </div>
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           </div>
         )}
@@ -248,7 +262,7 @@ export default async function OrganizationDetailPage({
             <nav className="flex space-x-2">
               {page > 1 && (
                 <a
-                  href={`?page=${page - 1}${searchParams.search ? `&search=${searchParams.search}` : ''}`}
+                  href={`?page=${page - 1}${resolvedSearchParams.search ? `&search=${resolvedSearchParams.search}` : ''}`}
                   className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                 >
                   Previous
@@ -259,7 +273,7 @@ export default async function OrganizationDetailPage({
               </span>
               {page < totalPages && (
                 <a
-                  href={`?page=${page + 1}${searchParams.search ? `&search=${searchParams.search}` : ''}`}
+                  href={`?page=${page + 1}${resolvedSearchParams.search ? `&search=${resolvedSearchParams.search}` : ''}`}
                   className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                 >
                   Next

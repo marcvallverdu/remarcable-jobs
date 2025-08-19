@@ -106,7 +106,8 @@ export class JobsFetcher {
             ? new Date(apiJob.date_validthrough) 
             : null,
           title: apiJob.title,
-          locationsRaw: apiJob.locations_raw as any || null,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          locationsRaw: apiJob.locations_raw as any || undefined,
           cities: apiJob.cities_derived || [],
           counties: apiJob.counties_derived || [],
           regions: apiJob.regions_derived || [],
@@ -117,7 +118,8 @@ export class JobsFetcher {
           longitude: apiJob.lngs_derived || [],
           isRemote: apiJob.remote_derived || false,
           employmentType: apiJob.employment_type || [],
-          salaryRaw: apiJob.salary_raw as any || null,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          salaryRaw: apiJob.salary_raw as any || undefined,
           url: apiJob.url,
           descriptionText: apiJob.description_text,
           lastFetchedAt: new Date(),
@@ -169,7 +171,13 @@ export class JobsFetcher {
       result.orgsCreated++;
     } else {
       // Update existing organization with any new data
-      const updateData: any = {};
+      const updateData: Partial<{
+        logo?: string;
+        linkedinUrl?: string;
+        linkedinEmployees?: number;
+        linkedinFollowers?: number;
+        linkedinDescription?: string;
+      }> = {};
       
       // Only update fields that are null in the database but present in the API
       if (!organization.logo && apiJob.organization_logo) {
@@ -204,7 +212,7 @@ export class JobsFetcher {
   }
   
   private async createFetchLog(
-    parameters: Record<string, any>,
+    parameters: Record<string, string | number | boolean | undefined>,
     result: FetchResult,
     savedQueryId?: string
   ): Promise<void> {
@@ -224,7 +232,7 @@ export class JobsFetcher {
     });
   }
   
-  async preview(queryBuilder: QueryBuilder): Promise<any[]> {
+  async preview(queryBuilder: QueryBuilder): Promise<FantasticJobsResponse[]> {
     const params = queryBuilder.pagination(5, 0).build();
     const jobs = await this.apiClient.searchJobs(params);
     

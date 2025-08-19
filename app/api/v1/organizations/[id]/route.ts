@@ -3,11 +3,11 @@ import { prisma } from '@/lib/db/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const organization = await prisma.organization.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         _count: {
           select: { jobs: true },
@@ -24,7 +24,7 @@ export async function GET(
     
     return NextResponse.json(organization);
   } catch (error) {
-    console.error(`Error fetching organization ${params.id}:`, error);
+    console.error(`Error fetching organization ${id}:`, error);
     return NextResponse.json(
       { error: 'Failed to fetch organization' },
       { status: 500 }

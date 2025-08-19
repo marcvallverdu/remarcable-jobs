@@ -7,10 +7,10 @@ export interface FantasticJobsResponse {
   organization_url?: string;
   date_validthrough?: string;
   locations_raw?: LocationRaw[];
-  locations_alt_raw?: any;
+  locations_alt_raw?: LocationRaw[];
   location_type?: string;
-  location_requirements_raw?: any;
-  salary_raw?: any;
+  location_requirements_raw?: Record<string, unknown>;
+  salary_raw?: Record<string, unknown>;
   employment_type?: string[];
   url: string;
   source_type?: string;

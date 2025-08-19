@@ -1,8 +1,8 @@
 import { auth } from './auth';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 
-export async function requireAuth(request?: NextRequest) {
+export async function requireAuth() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -17,7 +17,7 @@ export async function requireAuth(request?: NextRequest) {
   return session;
 }
 
-export async function requireAdmin(request?: NextRequest) {
+export async function requireAdmin() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });

@@ -9,8 +9,8 @@ const querySchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const searchParams = Object.fromEntries(request.nextUrl.searchParams);
     const query = querySchema.parse(searchParams);
@@ -19,13 +19,21 @@ export async function GET(
     
     const [jobs, total] = await Promise.all([
       prisma.job.findMany({
-        where: { organizationId: params.id },
+        where: { 
+          organizationId: id,
+          // Exclude expired jobs
+          expiredAt: null,
+        },
         skip,
         take: query.limit,
         orderBy: { datePosted: 'desc' },
       }),
       prisma.job.count({
-        where: { organizationId: params.id },
+        where: { 
+          organizationId: id,
+          // Exclude expired jobs
+          expiredAt: null,
+        },
       }),
     ]);
     
@@ -39,7 +47,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error(`Error fetching jobs for organization ${params.id}:`, error);
+    console.error(`Error fetching jobs for organization ${id}:`, error);
     return NextResponse.json(
       { error: 'Failed to fetch organization jobs' },
       { status: 500 }

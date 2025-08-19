@@ -46,9 +46,10 @@ async function getOrganizations(searchParams: SearchParams) {
 export default async function AdminOrganizationsPage({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
-  const { organizations, total, page, totalPages } = await getOrganizations(searchParams);
+  const resolvedSearchParams = await searchParams;
+  const { organizations, total, page, totalPages } = await getOrganizations(resolvedSearchParams);
 
   return (
     <div className="p-6">
@@ -65,7 +66,7 @@ export default async function AdminOrganizationsPage({
           <input
             type="text"
             name="search"
-            defaultValue={searchParams.search}
+            defaultValue={resolvedSearchParams.search}
             placeholder="Search organizations..."
             className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           />
@@ -146,7 +147,7 @@ export default async function AdminOrganizationsPage({
           <nav className="flex space-x-2">
             {page > 1 && (
               <a
-                href={`?page=${page - 1}${searchParams.search ? `&search=${searchParams.search}` : ''}`}
+                href={`?page=${page - 1}${resolvedSearchParams.search ? `&search=${resolvedSearchParams.search}` : ''}`}
                 className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Previous
@@ -157,7 +158,7 @@ export default async function AdminOrganizationsPage({
             </span>
             {page < totalPages && (
               <a
-                href={`?page=${page + 1}${searchParams.search ? `&search=${searchParams.search}` : ''}`}
+                href={`?page=${page + 1}${resolvedSearchParams.search ? `&search=${resolvedSearchParams.search}` : ''}`}
                 className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Next

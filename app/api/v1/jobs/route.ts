@@ -10,6 +10,7 @@ const querySchema = z.object({
   employmentType: z.string().optional(),
   search: z.string().optional(),
   organizationId: z.string().optional(),
+  boardSlug: z.string().optional(), // Filter by job board slug
 });
 
 export async function GET(request: NextRequest) {
@@ -17,7 +18,22 @@ export async function GET(request: NextRequest) {
     const searchParams = Object.fromEntries(request.nextUrl.searchParams);
     const params = querySchema.parse(searchParams);
     
-    const where: any = {};
+    const where: Record<string, unknown> = {
+      // Exclude expired jobs by default
+      expiredAt: null,
+    };
+    
+    // Filter by job board if specified
+    if (params.boardSlug) {
+      where.jobBoards = {
+        some: {
+          jobBoard: {
+            slug: params.boardSlug,
+            isActive: true,
+          },
+        },
+      };
+    }
     
     if (params.location) {
       where.OR = [
@@ -60,6 +76,10 @@ export async function GET(request: NextRequest) {
               name: true,
               logo: true,
               domain: true,
+              url: true,
+              linkedinUrl: true,
+              linkedinIndustry: true,
+              linkedinSize: true,
             },
           },
         },

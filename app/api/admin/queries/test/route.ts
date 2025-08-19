@@ -161,7 +161,8 @@ export async function POST(request: NextRequest) {
       isDuplicate: existingIds.has(job.id as string),
     }));
 
-    const duplicates = jobsWithDuplicateFlag.filter(job => job.isDuplicate).length;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const duplicates = jobsWithDuplicateFlag.filter((job: any) => job.isDuplicate).length;
     const newJobs = jobsWithDuplicateFlag.length - duplicates;
 
     return NextResponse.json({

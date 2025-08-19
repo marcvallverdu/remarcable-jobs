@@ -37,7 +37,7 @@ interface Query {
   id: string;
   name: string;
   description: string | null;
-  parameters: Record<string, unknown>;
+  parameters: unknown;
   isActive: boolean;
   lastRun: Date | null;
   resultCount: number | null;
@@ -64,62 +64,65 @@ export default function EditQueryClient({ query }: { query: Query }) {
     isDuplicate?: boolean;
   }>>([]);
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const params = query.parameters as any || {};
+  
   const [formData, setFormData] = useState({
     name: query.name,
     description: query.description || '',
     isActive: query.isActive,
-    endpoint: (query.parameters?.endpoint as string) || 'active-ats-7d',
+    endpoint: params.endpoint || 'active-ats-7d',
     parameters: {
       // Basic Search parameters
-      query: (query.parameters?.query as string) || '',
-      title: (query.parameters?.title as string) || '',
-      company: (query.parameters?.company as string) || '',
-      location: (query.parameters?.location as string) || '',
-      country: (query.parameters?.country as string) || '',
+      query: params.query || '',
+      title: params.title || '',
+      company: params.company || '',
+      location: params.location || '',
+      country: params.country || '',
       
       // Advanced Search parameters
-      advanced_title_filter: (query.parameters?.advanced_title_filter as string) || '',
-      advanced_description_filter: (query.parameters?.advanced_description_filter as string) || '',
-      advanced_organization_filter: (query.parameters?.advanced_organization_filter as string) || '',
+      advanced_title_filter: params.advanced_title_filter || '',
+      advanced_description_filter: params.advanced_description_filter || '',
+      advanced_organization_filter: params.advanced_organization_filter || '',
       
       // Filters
-      employment_types: (query.parameters?.employment_types as string[]) || [],
-      seniority_levels: (query.parameters?.seniority_levels as string[]) || [],
-      remote: (query.parameters?.remote as string) || '',
-      description_type: (query.parameters?.description_type as string) || 'text',
-      source: (query.parameters?.source as string) || '',
+      employment_types: params.employment_types || [],
+      seniority_levels: params.seniority_levels || [],
+      remote: params.remote || '',
+      description_type: params.description_type || 'text',
+      source: params.source || '',
       
       // Pagination
-      limit: (query.parameters?.limit as number) || 10,
-      offset: (query.parameters?.offset as number) || 0,
+      limit: params.limit || 10,
+      offset: params.offset || 0,
       
       // Date filters
-      date_posted: (query.parameters?.date_posted as string) || '',
-      date_filter: (query.parameters?.date_filter as string) || '',
+      date_posted: params.date_posted || '',
+      date_filter: params.date_filter || '',
       
       // Exclusion filters
-      exclude_job_boards: (query.parameters?.exclude_job_boards as boolean) || false,
-      companies_exclude: (query.parameters?.companies_exclude as string) || '',
-      title_exclude: (query.parameters?.title_exclude as string) || '',
-      organization_exclusion_filter: (query.parameters?.organization_exclusion_filter as string) || '',
+      exclude_job_boards: params.exclude_job_boards || false,
+      companies_exclude: params.companies_exclude || '',
+      title_exclude: params.title_exclude || '',
+      organization_exclusion_filter: params.organization_exclusion_filter || '',
       
       // AI-powered filters (BETA)
-      include_ai: (query.parameters?.include_ai as boolean) || false,
-      ai_employment_type_filter: (query.parameters?.ai_employment_type_filter as string) || '',
-      ai_work_arrangement_filter: (query.parameters?.ai_work_arrangement_filter as string) || '',
-      ai_has_salary: (query.parameters?.ai_has_salary as boolean) || false,
-      ai_experience_level_filter: (query.parameters?.ai_experience_level_filter as string) || '',
-      ai_visa_sponsorship_filter: (query.parameters?.ai_visa_sponsorship_filter as boolean) || false,
+      include_ai: params.include_ai || false,
+      ai_employment_type_filter: params.ai_employment_type_filter || '',
+      ai_work_arrangement_filter: params.ai_work_arrangement_filter || '',
+      ai_has_salary: params.ai_has_salary || false,
+      ai_experience_level_filter: params.ai_experience_level_filter || '',
+      ai_visa_sponsorship_filter: params.ai_visa_sponsorship_filter || false,
       
       // LinkedIn filters
-      include_li: (query.parameters?.include_li as boolean) || false,
-      li_organization_slug_filter: (query.parameters?.li_organization_slug_filter as string) || '',
-      li_organization_slug_exclusion_filter: (query.parameters?.li_organization_slug_exclusion_filter as string) || '',
-      li_industry_filter: (query.parameters?.li_industry_filter as string) || '',
-      li_organization_specialties_filter: (query.parameters?.li_organization_specialties_filter as string) || '',
-      li_organization_description_filter: (query.parameters?.li_organization_description_filter as string) || '',
-      li_organization_employees_gte: (query.parameters?.li_organization_employees_gte as number | undefined) || undefined,
-      li_organization_employees_lte: (query.parameters?.li_organization_employees_lte as number | undefined) || undefined,
+      include_li: params.include_li || false,
+      li_organization_slug_filter: params.li_organization_slug_filter || '',
+      li_organization_slug_exclusion_filter: params.li_organization_slug_exclusion_filter || '',
+      li_industry_filter: params.li_industry_filter || '',
+      li_organization_specialties_filter: params.li_organization_specialties_filter || '',
+      li_organization_description_filter: params.li_organization_description_filter || '',
+      li_organization_employees_gte: params.li_organization_employees_gte || undefined,
+      li_organization_employees_lte: params.li_organization_employees_lte || undefined,
     },
   });
 
@@ -229,7 +232,7 @@ export default function EditQueryClient({ query }: { query: Query }) {
       parameters: {
         ...formData.parameters,
         employment_types: types.includes(type)
-          ? types.filter(t => t !== type)
+          ? types.filter((t: string) => t !== type)
           : [...types, type],
       },
     });
@@ -242,7 +245,7 @@ export default function EditQueryClient({ query }: { query: Query }) {
       parameters: {
         ...formData.parameters,
         seniority_levels: levels.includes(level)
-          ? levels.filter(l => l !== level)
+          ? levels.filter((l: string) => l !== level)
           : [...levels, level],
       },
     });

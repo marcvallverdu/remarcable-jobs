@@ -6,15 +6,15 @@ import { prisma } from '@/lib/db/prisma';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const authResult = await requireAdmin(request);
+  { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const authResult = await requireAdmin();
   if (authResult instanceof NextResponse) return authResult;
   
   try {
     const query = await prisma.savedQuery.findFirst({
       where: {
-        id: params.id,
+        id: id,
         createdBy: authResult.user.id,
       },
     });
@@ -46,7 +46,7 @@ export async function POST(
       result,
     });
   } catch (error) {
-    console.error(`Error running query ${params.id}:`, error);
+    console.error(`Error running query ${id}:`, error);
     return NextResponse.json(
       { error: 'Failed to run query' },
       { status: 500 }

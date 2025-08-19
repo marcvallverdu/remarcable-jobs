@@ -6,15 +6,51 @@ import { prisma } from '@/lib/db/prisma';
 import { previewRequestSchema } from '@/lib/fantastic-jobs/schemas';
 
 export async function POST(request: NextRequest) {
-  const authResult = await requireAdmin(request);
+  const authResult = await requireAdmin();
   if (authResult instanceof NextResponse) return authResult;
   
   try {
     const body = await request.json();
     const params = previewRequestSchema.parse(body);
     
+    // Convert array fields to strings if needed
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const processedParams: any = {
+      ...params,
+      location_filter: Array.isArray(params.location_filter) 
+        ? params.location_filter.join(' OR ')
+        : params.location_filter,
+      organization_filter: Array.isArray(params.organization_filter)
+        ? params.organization_filter.join(',')
+        : params.organization_filter,
+      organization_exclusion_filter: Array.isArray(params.organization_exclusion_filter)
+        ? params.organization_exclusion_filter.join(',')
+        : params.organization_exclusion_filter,
+      source: Array.isArray(params.source)
+        ? params.source.join(',')
+        : params.source,
+      li_organization_slug_filter: Array.isArray(params.li_organization_slug_filter)
+        ? params.li_organization_slug_filter.join(',')
+        : params.li_organization_slug_filter,
+      li_organization_slug_exclusion_filter: Array.isArray(params.li_organization_slug_exclusion_filter)
+        ? params.li_organization_slug_exclusion_filter.join(',')
+        : params.li_organization_slug_exclusion_filter,
+      li_industry_filter: Array.isArray(params.li_industry_filter)
+        ? params.li_industry_filter.join(',')
+        : params.li_industry_filter,
+      ai_employment_type_filter: Array.isArray(params.ai_employment_type_filter)
+        ? params.ai_employment_type_filter.join(',')
+        : params.ai_employment_type_filter,
+      ai_work_arrangement_filter: Array.isArray(params.ai_work_arrangement_filter)
+        ? params.ai_work_arrangement_filter.join(',')
+        : params.ai_work_arrangement_filter,
+      ai_experience_level_filter: Array.isArray(params.ai_experience_level_filter)
+        ? params.ai_experience_level_filter.join(',')
+        : params.ai_experience_level_filter,
+    };
+    
     // Create query builder from all parameters
-    const queryBuilder = QueryBuilder.fromJSON(params);
+    const queryBuilder = QueryBuilder.fromJSON(processedParams);
     
     // Ensure we're only getting a preview (max 5 items)
     queryBuilder.pagination(5, 0);

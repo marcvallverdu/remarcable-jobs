@@ -8,6 +8,7 @@ interface SearchParams {
   remote?: string;
   dateFrom?: string;
   dateTo?: string;
+  showExpired?: string;
 }
 
 async function getJobs(searchParams: SearchParams) {
@@ -15,7 +16,8 @@ async function getJobs(searchParams: SearchParams) {
   const limit = 20;
   const skip = (page - 1) * limit;
   
-  const where: Record<string, unknown> = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const where: any = {};
   
   // Search filter
   if (searchParams.search) {
@@ -47,6 +49,14 @@ async function getJobs(searchParams: SearchParams) {
       where.datePosted.lte = new Date(searchParams.dateTo);
     }
   }
+  
+  // Expired jobs filter - admin can choose to include or exclude
+  if (searchParams.showExpired === 'only') {
+    where.expiredAt = { not: null };
+  } else if (searchParams.showExpired !== 'true') {
+    // By default, only show active jobs unless explicitly requested
+    where.expiredAt = null;
+  }
 
   const [jobs, total, organizations] = await Promise.all([
     prisma.job.findMany({
@@ -77,9 +87,10 @@ async function getJobs(searchParams: SearchParams) {
 export default async function AdminJobsPage({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
-  const { jobs, total, page, totalPages, organizations } = await getJobs(searchParams);
+  const resolvedSearchParams = await searchParams;
+  const { jobs, total, page, totalPages, organizations } = await getJobs(resolvedSearchParams);
 
   return (
     <div className="p-6">
@@ -93,7 +104,7 @@ export default async function AdminJobsPage({
       {/* Filters */}
       <div className="mb-6 bg-white p-4 rounded-lg shadow">
         <form method="get" className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {/* Search */}
             <div>
               <label htmlFor="search" className="block text-sm font-medium text-gray-700">
@@ -103,7 +114,7 @@ export default async function AdminJobsPage({
                 type="text"
                 name="search"
                 id="search"
-                defaultValue={searchParams.search}
+                defaultValue={resolvedSearchParams.search}
                 placeholder="Title or description..."
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               />
@@ -117,7 +128,7 @@ export default async function AdminJobsPage({
               <select
                 name="organization"
                 id="organization"
-                defaultValue={searchParams.organization}
+                defaultValue={resolvedSearchParams.organization}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               >
                 <option value="">All Organizations</option>
@@ -137,7 +148,7 @@ export default async function AdminJobsPage({
               <select
                 name="remote"
                 id="remote"
-                defaultValue={searchParams.remote}
+                defaultValue={resolvedSearchParams.remote}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               >
                 <option value="">All</option>
@@ -155,9 +166,26 @@ export default async function AdminJobsPage({
                 type="date"
                 name="dateFrom"
                 id="dateFrom"
-                defaultValue={searchParams.dateFrom}
+                defaultValue={resolvedSearchParams.dateFrom}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               />
+            </div>
+
+            {/* Show Expired */}
+            <div>
+              <label htmlFor="showExpired" className="block text-sm font-medium text-gray-700">
+                Show Expired
+              </label>
+              <select
+                name="showExpired"
+                id="showExpired"
+                defaultValue={resolvedSearchParams.showExpired}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="">Active Only</option>
+                <option value="true">Include Expired</option>
+                <option value="only">Expired Only</option>
+              </select>
             </div>
           </div>
 
@@ -181,13 +209,20 @@ export default async function AdminJobsPage({
       {/* Jobs Table */}
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
         <ul className="divide-y divide-gray-200">
-          {jobs.map((job) => (
-            <li key={job.id}>
+          {jobs.map((job) => {
+            const isExpired = job.expiredAt !== null;
+            return (
+            <li key={job.id} className={isExpired ? 'opacity-60 bg-gray-50' : ''}>
               <div className="px-4 py-4 sm:px-6">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <Link href={`/admin/jobs/${job.id}`} className="text-sm font-medium text-indigo-600 truncate hover:text-indigo-900">
                       {job.title}
+                      {isExpired && (
+                        <span className="ml-2 px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">
+                          EXPIRED
+                        </span>
+                      )}
                     </Link>
                     <p className="mt-1 text-sm text-gray-900">
                       {job.organization.name}
@@ -204,6 +239,11 @@ export default async function AdminJobsPage({
                     </div>
                     <p className="mt-1 text-xs text-gray-500">
                       Posted: {new Date(job.datePosted).toLocaleDateString()}
+                      {isExpired && job.expiredAt && (
+                        <span className="ml-3 text-red-600 font-medium">
+                          Expired: {new Date(job.expiredAt).toLocaleDateString()}
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="ml-4 flex flex-col items-end gap-2">
@@ -225,7 +265,8 @@ export default async function AdminJobsPage({
                 </div>
               </div>
             </li>
-          ))}
+          );
+          })}
         </ul>
       </div>
 
@@ -235,7 +276,7 @@ export default async function AdminJobsPage({
           <nav className="flex space-x-2">
             {page > 1 && (
               <Link
-                href={`?page=${page - 1}${searchParams.search ? `&search=${searchParams.search}` : ''}`}
+                href={`?page=${page - 1}${resolvedSearchParams.search ? `&search=${resolvedSearchParams.search}` : ''}`}
                 className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Previous
@@ -246,7 +287,7 @@ export default async function AdminJobsPage({
             </span>
             {page < totalPages && (
               <Link
-                href={`?page=${page + 1}${searchParams.search ? `&search=${searchParams.search}` : ''}`}
+                href={`?page=${page + 1}${resolvedSearchParams.search ? `&search=${resolvedSearchParams.search}` : ''}`}
                 className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Next

@@ -11,8 +11,9 @@ const API_ENDPOINTS: Record<string, string> = {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     // Check authentication
     const session = await auth.api.getSession({
@@ -41,7 +42,7 @@ export async function POST(
 
     // Get the saved query
     const savedQuery = await prisma.savedQuery.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!savedQuery) {
@@ -55,7 +56,7 @@ export async function POST(
     const { saveJobs = false, selectedJobIds = [] } = body;
 
     const parameters = savedQuery.parameters as Record<string, unknown>;
-    const endpoint = parameters.endpoint || 'active-ats-7d';
+    const endpoint = (parameters.endpoint as string) || 'active-ats-7d';
 
     if (!API_ENDPOINTS[endpoint]) {
       return NextResponse.json(

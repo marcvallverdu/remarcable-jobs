@@ -24,6 +24,7 @@ export default function AdminNav({ session }: Props) {
 
   const navItems = [
     { href: '/admin', label: 'Dashboard' },
+    { href: '/admin/boards', label: 'Job Boards' },
     { href: '/admin/jobs', label: 'Jobs' },
     { href: '/admin/organizations', label: 'Organizations' },
     { href: '/admin/queries', label: 'Queries' },
@@ -43,7 +44,9 @@ export default function AdminNav({ session }: Props) {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <h1 className="text-xl font-semibold">Admin Panel</h1>
+              <Link href="/" className="text-xl font-semibold hover:text-gray-700">
+                ← Admin Panel
+              </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               {navItems.map((item) => (
@@ -64,10 +67,16 @@ export default function AdminNav({ session }: Props) {
           
           <div className="flex items-center space-x-4">
             <Link
+              href="/api-docs"
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              API Docs
+            </Link>
+            <Link
               href="/"
               className="text-sm text-gray-500 hover:text-gray-700"
             >
-              View Site
+              Home
             </Link>
             <span className="text-sm text-gray-700">
               {session.user?.email}

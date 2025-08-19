@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const [
       totalJobs,
@@ -12,18 +12,20 @@ export async function GET(request: NextRequest) {
       topOrganizations,
       employmentTypes,
     ] = await Promise.all([
-      prisma.job.count(),
+      prisma.job.count({ where: { expiredAt: null } }),
       prisma.organization.count(),
-      prisma.job.count({ where: { isRemote: true } }),
+      prisma.job.count({ where: { isRemote: true, expiredAt: null } }),
       prisma.job.count({
         where: {
           datePosted: {
             gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
           },
+          expiredAt: null,
         },
       }),
       prisma.job.findMany({
         select: { cities: true },
+        where: { expiredAt: null },
         take: 1000,
       }).then((jobs) => {
         const locationCounts = new Map<string, number>();
@@ -52,6 +54,7 @@ export async function GET(request: NextRequest) {
       }),
       prisma.job.findMany({
         select: { employmentType: true },
+        where: { expiredAt: null },
         take: 1000,
       }).then((jobs) => {
         const typeCounts = new Map<string, number>();

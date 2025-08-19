@@ -1,7 +1,7 @@
 import { APIQueryParameters } from './types';
 
 export class QueryBuilder {
-  private params: Record<string, any> = {};
+  private params: Record<string, string | number | boolean> = {};
   
   constructor(baseParams?: APIQueryParameters) {
     if (baseParams) {
@@ -237,8 +237,8 @@ export class QueryBuilder {
   }
   
   // Build the final query parameters
-  build(): Record<string, any> {
-    const finalParams: Record<string, any> = {};
+  build(): Record<string, string | number | boolean | undefined> {
+    const finalParams: Record<string, string | number | boolean | undefined> = {};
     
     // Process each parameter and convert booleans to strings where needed
     Object.entries(this.params).forEach(([key, value]) => {
@@ -261,8 +261,8 @@ export class QueryBuilder {
   }
   
   // Helper method to build from raw parameters object
-  private buildParams(params: APIQueryParameters): Record<string, any> {
-    const result: Record<string, any> = {};
+  private buildParams(params: APIQueryParameters): Record<string, string | number | boolean> {
+    const result: Record<string, string | number | boolean> = {};
     
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
@@ -295,12 +295,12 @@ export class QueryBuilder {
   }
   
   // Get a specific parameter value
-  getParam(key: keyof APIQueryParameters): any {
+  getParam(key: keyof APIQueryParameters): string | number | boolean | undefined {
     return this.params[key];
   }
   
   // Set a raw parameter (for advanced use)
-  setParam(key: string, value: any): QueryBuilder {
+  setParam(key: string, value: string | number | boolean): QueryBuilder {
     if (value !== undefined && value !== null) {
       this.params[key] = value;
     }

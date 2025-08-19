@@ -5,8 +5,9 @@ import { headers } from 'next/headers';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     // Check authentication
     const session = await auth.api.getSession({
@@ -35,7 +36,7 @@ export async function DELETE(
 
     // Check if job exists
     const job = await prisma.job.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!job) {
@@ -45,19 +46,20 @@ export async function DELETE(
       );
     }
 
-    // Delete the job
-    await prisma.job.delete({
-      where: { id: params.id },
+    // Expire the job instead of deleting it
+    await prisma.job.update({
+      where: { id },
+      data: { expiredAt: new Date() },
     });
 
     return NextResponse.json(
-      { message: 'Job deleted successfully' },
+      { message: 'Job expired successfully' },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error deleting job:', error);
+    console.error('Error expiring job:', error);
     return NextResponse.json(
-      { error: 'Failed to delete job' },
+      { error: 'Failed to expire job' },
       { status: 500 }
     );
   }

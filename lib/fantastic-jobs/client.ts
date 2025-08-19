@@ -54,7 +54,7 @@ class FantasticJobsClient {
     );
   }
   
-  async searchJobs(params: Record<string, any>) {
+  async searchJobs(params: Record<string, string | number | boolean | undefined>) {
     try {
       const response = await this.client.get('/jobs/search', { params });
       return response.data;
