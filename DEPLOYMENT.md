@@ -41,7 +41,7 @@ Create a `.env.production` file with these variables:
 
 ```bash
 # Database (Use connection pooling for production)
-DATABASE_URL="postgresql://neondb_owner:npg_kjMxZc87WdgG@ep-floral-bonus-aboht1q7-pooler.eu-west-2.aws.neon.tech/jobboard_prod?sslmode=require&channel_binding=require
+DATABASE_URL="[REDACTED - Use environment variable from Vercel/hosting dashboard]"
 
 # Authentication
 BETTER_AUTH_SECRET="<generate-with-openssl-rand-base64-32>"
@@ -75,7 +75,7 @@ CREATE DATABASE jobboard_prod;
 2. **Run Migrations:**
 ```bash
 # Set production database URL
-export DATABASE_URL="your-production-database-url"
+export DATABASE_URL="[your-production-database-url]"
 
 # Generate Prisma client
 npx prisma generate

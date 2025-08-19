@@ -36,7 +36,7 @@ Go to: https://vercel.com/[your-username]/[your-project]/settings/environment-va
 Add these variables for **Production** environment:
 
 ```
-DATABASE_URL = postgresql://neondb_owner:npg_kjMxZc87WdgG@ep-floral-bonus-aboht1q7-pooler.eu-west-2.aws.neon.tech/jobboard_prod?sslmode=require&channel_binding=require
+DATABASE_URL = [REDACTED - Copy from Neon dashboard or use secure environment variable]
 
 BETTER_AUTH_SECRET = [Your generated secret]
 
@@ -91,10 +91,10 @@ After deployment, test these endpoints:
 
 ```bash
 # View production data
-DATABASE_URL="[your-neon-url]" npx prisma studio
+DATABASE_URL="[copy-from-neon-dashboard]" npx prisma studio
 
-# Check database status
-DATABASE_URL="[your-neon-url]" npx prisma db pull
+# Check database status  
+DATABASE_URL="[copy-from-neon-dashboard]" npx prisma db pull
 
 # View logs (after Vercel deployment)
 vercel logs --prod
