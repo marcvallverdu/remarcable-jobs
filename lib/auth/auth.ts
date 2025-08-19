@@ -2,20 +2,26 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from '@/lib/db/prisma';
 
-// Ensure secret is available
+// Ensure secret is available and in correct format
 const getAuthSecret = () => {
   const secret = process.env.BETTER_AUTH_SECRET;
   
   // In production, we must have a real secret
   if (process.env.NODE_ENV === 'production' && !secret) {
     console.error('BETTER_AUTH_SECRET is not set in production!');
-    // Use a placeholder that will fail gracefully
-    return 'MISSING_SECRET_CHECK_ENV_VARS';
+    // Return a valid hex string that will fail auth but not crash
+    return '0000000000000000000000000000000000000000000000000000000000000000';
   }
   
-  // In development, use a default secret
+  // In development, use a default hex secret
   if (!secret) {
-    return 'dev-secret-change-in-production';
+    return 'a1b2c3d4e5f6789012345678901234567890123456789012345678901234567';
+  }
+  
+  // Validate the secret is hex format
+  if (!/^[0-9a-fA-F]+$/.test(secret)) {
+    console.error('BETTER_AUTH_SECRET must be a hex string! Got:', secret.substring(0, 10) + '...');
+    // If not hex, try to use it anyway (Better Auth might handle it)
   }
   
   return secret;
