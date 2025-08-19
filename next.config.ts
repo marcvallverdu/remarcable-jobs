@@ -1,6 +1,37 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Optimize for production and serverless
+  compress: true,
+  poweredByHeader: false,
+  
+  // Optimize builds and reduce memory usage
+  experimental: {
+    // Reduce memory usage during builds
+    workerThreads: false,
+    cpus: 1,
+  },
+  
+  // Optimize webpack for production
+  webpack: (config, { isServer }) => {
+    // Reduce bundle size and memory usage
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
+    
+    // Optimize source maps for production
+    if (process.env.NODE_ENV === 'production') {
+      config.devtool = false;
+    }
+    
+    return config;
+  },
+  
   images: {
     remotePatterns: [
       {

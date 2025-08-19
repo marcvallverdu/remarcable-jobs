@@ -10,6 +10,8 @@ export async function GET() {
     checks: {
       database: 'unknown',
       memory: 'ok',
+      rss: 'unknown',
+      memoryStatus: 'unknown',
     },
   };
 
@@ -21,13 +23,25 @@ export async function GET() {
     
     health.checks.database = `healthy (${dbResponseTime}ms)`;
     
-    // Check memory usage
+    // Check memory usage with more detail
     const memUsage = process.memoryUsage();
     const memoryUsagePercent = (memUsage.heapUsed / memUsage.heapTotal) * 100;
+    const heapUsedMB = Math.round(memUsage.heapUsed / 1024 / 1024);
+    const heapTotalMB = Math.round(memUsage.heapTotal / 1024 / 1024);
+    const rssMB = Math.round(memUsage.rss / 1024 / 1024);
     
-    if (memoryUsagePercent > 90) {
-      health.checks.memory = 'warning';
+    // Add detailed memory info
+    health.checks.memory = `${heapUsedMB}MB / ${heapTotalMB}MB (${Math.round(memoryUsagePercent)}%)`;
+    health.checks.rss = `${rssMB}MB`;
+    
+    // Adjust thresholds for Vercel environment
+    if (memoryUsagePercent > 85) {
       health.status = 'degraded';
+      health.checks.memoryStatus = 'warning - consider redeploying';
+    } else if (memoryUsagePercent > 70) {
+      health.checks.memoryStatus = 'moderate';
+    } else {
+      health.checks.memoryStatus = 'healthy';
     }
     
     return NextResponse.json(health);
