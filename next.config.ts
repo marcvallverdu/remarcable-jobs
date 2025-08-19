@@ -32,20 +32,8 @@ const nextConfig: NextConfig = {
     return config;
   },
   
-  // CORS configuration for API routes
-  async headers() {
-    return [
-      {
-        source: '/api/:path*',
-        headers: [
-          { key: 'Access-Control-Allow-Credentials', value: 'true' },
-          { key: 'Access-Control-Allow-Origin', value: 'https://remarcablejobs.com' },
-          { key: 'Access-Control-Allow-Methods', value: 'GET,DELETE,PATCH,POST,PUT,OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization' },
-        ],
-      },
-    ];
-  },
+  // CORS configuration for API routes - removed since we handle it in middleware
+  // The middleware will dynamically set the correct origin
   
   images: {
     remotePatterns: [

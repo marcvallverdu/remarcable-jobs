@@ -3,6 +3,35 @@ import type { NextRequest } from 'next/server';
 import { checkRateLimit } from './lib/rate-limiter';
 
 export async function middleware(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  
+  // Handle CORS for API routes
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    // Handle preflight requests
+    if (request.method === 'OPTIONS') {
+      const response = new NextResponse(null, { status: 200 });
+      
+      // Allow requests from these origins
+      const allowedOrigins = [
+        'https://remarcablejobs.com',
+        'https://www.remarcablejobs.com',
+        'https://remarcable-jobs.vercel.app',
+        'http://localhost:3000',
+      ];
+      
+      if (origin && allowedOrigins.includes(origin)) {
+        response.headers.set('Access-Control-Allow-Origin', origin);
+        response.headers.set('Access-Control-Allow-Credentials', 'true');
+      }
+      
+      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version');
+      response.headers.set('Access-Control-Max-Age', '86400');
+      
+      return response;
+    }
+  }
+  
   // Only apply rate limiting to public API routes
   if (request.nextUrl.pathname.startsWith('/api/v1')) {
     // Skip rate limiting in development
@@ -44,6 +73,24 @@ export async function middleware(request: NextRequest) {
 
   // Add security headers for all routes
   const response = NextResponse.next();
+  
+  // Add CORS headers for API routes
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    const allowedOrigins = [
+      'https://remarcablejobs.com',
+      'https://www.remarcablejobs.com',
+      'https://remarcable-jobs.vercel.app',
+      'http://localhost:3000',
+    ];
+    
+    if (origin && allowedOrigins.includes(origin)) {
+      response.headers.set('Access-Control-Allow-Origin', origin);
+      response.headers.set('Access-Control-Allow-Credentials', 'true');
+    }
+    
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  }
   
   // Security headers
   response.headers.set('X-Frame-Options', 'DENY');
