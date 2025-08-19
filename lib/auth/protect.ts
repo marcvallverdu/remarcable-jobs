@@ -22,7 +22,8 @@ export async function requireAdmin() {
     headers: await headers(),
   });
   
-  if (!session?.user || !session.user.isAdmin) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (!session?.user || !(session.user as any).isAdmin) {
     return NextResponse.json(
       { error: 'Unauthorized - Admin access required' },
       { status: 401 }

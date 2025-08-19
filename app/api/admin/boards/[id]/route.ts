@@ -23,7 +23,8 @@ export async function GET(request: NextRequest, { params }: Props) {
       headers: request.headers,
     });
     
-    if (!session?.user?.isAdmin) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!(session?.user as any)?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
@@ -78,7 +79,8 @@ export async function PATCH(request: NextRequest, { params }: Props) {
       headers: request.headers,
     });
     
-    if (!session?.user?.isAdmin) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!(session?.user as any)?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
@@ -122,7 +124,8 @@ export async function DELETE(request: NextRequest, { params }: Props) {
       headers: request.headers,
     });
     
-    if (!session?.user?.isAdmin) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!(session?.user as any)?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     

@@ -11,9 +11,9 @@ Click "Add New" and create each of these:
 
 #### 1. BETTER_AUTH_SECRET (MUST BE HEX FORMAT!)
 **Key:** `BETTER_AUTH_SECRET`  
-**Value:** `29ac0acf703475dc2ce12cbf908f7781e1d6038bfe5264afd2477eb80f22cbeb`  
+**Value:** Generate using: `openssl rand -hex 32`  
 **Environment:** Production ✓
-**Important:** This MUST be a hex string (only 0-9 and a-f characters)
+**Important:** This MUST be a hex string (only 0-9 and a-f characters, 64 characters long)
 
 #### 2. BETTER_AUTH_URL  
 **Key:** `BETTER_AUTH_URL`  
