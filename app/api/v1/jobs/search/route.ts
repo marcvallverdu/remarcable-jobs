@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { z } from 'zod';
+import { validateBearerToken, unauthorizedResponse } from '@/lib/auth/api-auth';
 
 const searchSchema = z.object({
   q: z.string().min(1),
@@ -11,6 +12,12 @@ const searchSchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
+  // Validate API token
+  const tokenValidation = await validateBearerToken(request);
+  if (!tokenValidation.valid) {
+    return unauthorizedResponse(tokenValidation.error);
+  }
+  
   try {
     const searchParams = Object.fromEntries(request.nextUrl.searchParams);
     const params = searchSchema.parse(searchParams);

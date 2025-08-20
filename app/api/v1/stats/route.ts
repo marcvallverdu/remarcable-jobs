@@ -1,7 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
+import { validateBearerToken, unauthorizedResponse } from '@/lib/auth/api-auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Validate API token
+  const tokenValidation = await validateBearerToken(request);
+  if (!tokenValidation.valid) {
+    return unauthorizedResponse(tokenValidation.error);
+  }
+
   try {
     const [
       totalJobs,

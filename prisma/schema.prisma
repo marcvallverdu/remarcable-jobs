@@ -133,6 +133,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
   savedQueries  SavedQuery[]
+  apiTokens     ApiToken[]
 }
 
 model Session {
@@ -165,6 +166,21 @@ model Account {
   updatedAt         DateTime @updatedAt
   
   @@unique([providerId, accountId])
+}
+
+model ApiToken {
+  id          String    @id @default(cuid())
+  name        String
+  token       String    @unique
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([token])
+  @@index([userId])
 }
 
 model Verification {

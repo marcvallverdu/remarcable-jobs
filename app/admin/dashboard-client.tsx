@@ -174,6 +174,26 @@ export default function AdminDashboardClient({ stats }: Props) {
                   View public API statistics
                 </p>
               </a>
+              
+              <Link
+                href="/admin/api-tokens"
+                className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow block"
+              >
+                <h3 className="font-medium text-gray-900">API Tokens</h3>
+                <p className="mt-2 text-sm text-gray-500">
+                  Manage API authentication tokens
+                </p>
+              </Link>
+              
+              <Link
+                href="/admin/api-docs"
+                className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow block"
+              >
+                <h3 className="font-medium text-gray-900">API Documentation</h3>
+                <p className="mt-2 text-sm text-gray-500">
+                  View API endpoints and usage
+                </p>
+              </Link>
             </div>
           </div>
       </div>
