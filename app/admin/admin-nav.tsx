@@ -67,7 +67,7 @@ export default function AdminNav({ session }: Props) {
           
           <div className="flex items-center space-x-4">
             <Link
-              href="/api-docs"
+              href="/admin/api-docs"
               className="text-sm text-gray-500 hover:text-gray-700"
             >
               API Docs

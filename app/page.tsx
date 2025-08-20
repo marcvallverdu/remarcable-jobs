@@ -35,7 +35,7 @@ export default function Home() {
 
           {/* API Documentation */}
           <Link
-            href="/api-docs"
+            href="/admin/api-docs"
             className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
           >
             <div className="text-center">
@@ -92,7 +92,7 @@ export default function Home() {
               Organizations
             </Link>
             <Link
-              href="/api-docs"
+              href="/admin/api-docs"
               className="text-indigo-600 hover:text-indigo-800"
             >
               API Docs
