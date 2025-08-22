@@ -102,26 +102,26 @@ export class JobsFetcher {
       await this.prisma.job.update({
         where: { externalId: apiJob.id },
         data: {
-          dateValidThrough: apiJob.date_validthrough 
-            ? new Date(apiJob.date_validthrough) 
+          dateValidThrough: apiJob.date_valid_through 
+            ? new Date(apiJob.date_valid_through) 
             : null,
           title: apiJob.title,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           locationsRaw: apiJob.locations_raw as any || undefined,
-          cities: apiJob.cities_derived || [],
-          counties: apiJob.counties_derived || [],
-          regions: apiJob.regions_derived || [],
-          countries: apiJob.countries_derived || [],
-          locationsFull: apiJob.locations_derived || [],
-          timezones: apiJob.timezones_derived || [],
-          latitude: apiJob.lats_derived || [],
-          longitude: apiJob.lngs_derived || [],
-          isRemote: apiJob.remote_derived || false,
-          employmentType: apiJob.employment_type || [],
+          cities: apiJob.cities || [],
+          counties: apiJob.counties || [],
+          regions: apiJob.regions || [],
+          countries: apiJob.countries || [],
+          locationsFull: apiJob.locations_full || [],
+          timezones: apiJob.timezones || [],
+          latitude: apiJob.latitude || [],
+          longitude: apiJob.longitude || [],
+          isRemote: apiJob.remote || false,
+          employmentType: apiJob.employment_types || [],
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           salaryRaw: apiJob.salary_raw as any || undefined,
           url: apiJob.url,
-          descriptionText: apiJob.description_text,
+          descriptionText: apiJob.description,
           lastFetchedAt: new Date(),
         },
       });
@@ -149,9 +149,9 @@ export class JobsFetcher {
     // Try to find existing organization
     let organization = null;
     
-    if (apiJob.linkedin_org_slug) {
+    if (apiJob.company_linkedin_slug) {
       organization = await this.prisma.organization.findUnique({
-        where: { linkedinSlug: apiJob.linkedin_org_slug },
+        where: { linkedinSlug: apiJob.company_linkedin_slug },
       });
     }
     
@@ -180,20 +180,20 @@ export class JobsFetcher {
       }> = {};
       
       // Only update fields that are null in the database but present in the API
-      if (!organization.logo && apiJob.organization_logo) {
-        updateData.logo = apiJob.organization_logo;
+      if (!organization.logo && apiJob.company_logo) {
+        updateData.logo = apiJob.company_logo;
       }
-      if (!organization.linkedinUrl && apiJob.linkedin_org_url) {
-        updateData.linkedinUrl = apiJob.linkedin_org_url;
+      if (!organization.linkedinUrl && apiJob.company_linkedin_url) {
+        updateData.linkedinUrl = apiJob.company_linkedin_url;
       }
-      if (!organization.linkedinEmployees && apiJob.linkedin_org_employees) {
-        updateData.linkedinEmployees = apiJob.linkedin_org_employees;
+      if (!organization.linkedinEmployees && apiJob.company_employees) {
+        updateData.linkedinEmployees = apiJob.company_employees;
       }
-      if (!organization.linkedinFollowers && apiJob.linkedin_org_followers) {
-        updateData.linkedinFollowers = apiJob.linkedin_org_followers;
+      if (!organization.linkedinFollowers && apiJob.company_followers) {
+        updateData.linkedinFollowers = apiJob.company_followers;
       }
-      if (!organization.linkedinDescription && apiJob.linkedin_org_description) {
-        updateData.linkedinDescription = apiJob.linkedin_org_description;
+      if (!organization.linkedinDescription && apiJob.company_description) {
+        updateData.linkedinDescription = apiJob.company_description;
       }
       
       if (Object.keys(updateData).length > 0) {

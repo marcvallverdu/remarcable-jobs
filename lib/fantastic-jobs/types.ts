@@ -3,46 +3,51 @@ export interface FantasticJobsResponse {
   date_posted: string;
   date_created: string;
   title: string;
-  organization: string;
-  organization_url?: string;
-  date_validthrough?: string;
+  
+  // Company/Organization fields (API returns company_* prefix)
+  company_name: string;
+  company_url?: string;
+  company_logo?: string;
+  company_linkedin_url?: string;
+  company_linkedin_slug?: string;
+  company_employees?: number;
+  company_size?: string;
+  company_industry?: string;
+  company_type?: string;
+  company_followers?: number;
+  company_headquarters?: string;
+  company_founded_date?: string;
+  company_specialties?: string[];
+  company_locations?: string[];
+  company_description?: string;
+  
+  // Job details
+  date_valid_through?: string;
   locations_raw?: LocationRaw[];
   locations_alt_raw?: LocationRaw[];
   location_type?: string;
   location_requirements_raw?: Record<string, unknown>;
   salary_raw?: Record<string, unknown>;
-  employment_type?: string[];
+  employment_types?: string[];
   url: string;
   source_type?: string;
   source?: string;
   source_domain?: string;
-  organization_logo?: string;
-  cities_derived?: string[];
-  counties_derived?: string[];
-  regions_derived?: string[];
-  countries_derived?: string[];
-  locations_derived?: string[];
-  timezones_derived?: string[];
-  lats_derived?: number[];
-  lngs_derived?: number[];
-  remote_derived?: boolean;
-  domain_derived?: string;
-  description_text: string;
   
-  // LinkedIn organization data
-  linkedin_org_employees?: number;
-  linkedin_org_url?: string;
-  linkedin_org_size?: string;
-  linkedin_org_slogan?: string;
-  linkedin_org_industry?: string;
-  linkedin_org_followers?: number;
-  linkedin_org_headquarters?: string;
-  linkedin_org_type?: string;
-  linkedin_org_foundeddate?: string;
-  linkedin_org_specialties?: string[];
-  linkedin_org_locations?: string[];
-  linkedin_org_description?: string;
-  linkedin_org_slug?: string;
+  // Location derived fields
+  cities?: string[];
+  counties?: string[];
+  regions?: string[];
+  countries?: string[];
+  locations_full?: string[];
+  timezones?: string[];
+  latitude?: number[];
+  longitude?: number[];
+  remote?: boolean;
+  domain_derived?: string;
+  
+  // Description
+  description: string;
 }
 
 export interface LocationRaw {
