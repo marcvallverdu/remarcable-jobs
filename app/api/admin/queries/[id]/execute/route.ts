@@ -165,13 +165,14 @@ export async function POST(
     // The API returns an array directly in response.data
     const jobs = Array.isArray(response.data) ? response.data : (response.data.data || response.data.jobs || []);
     
-    // Check for duplicates in database
+    // Check for duplicates in database - only check active jobs (not expired)
     const externalIds = jobs.map((job: Record<string, unknown>) => job.id as string);
     const existingJobs = await prisma.job.findMany({
       where: {
         externalId: {
           in: externalIds,
         },
+        expiredAt: null, // Only check against active jobs, not expired ones
       },
       select: {
         externalId: true,
@@ -194,9 +195,27 @@ export async function POST(
     }
 
     let jobsCreated = 0;
+    let jobsReactivated = 0;
     let orgsCreated = 0;
     let orgsUpdated = 0;
     const errors: string[] = [];
+
+    // Check if any of the jobs we're about to save are expired in the database
+    // If so, we'll reactivate them instead of creating new ones
+    const expiredJobs = await prisma.job.findMany({
+      where: {
+        externalId: {
+          in: jobsToSave.map((job: Record<string, unknown>) => job.id as string),
+        },
+        expiredAt: { not: null }, // Find expired jobs
+      },
+      select: {
+        id: true,
+        externalId: true,
+      },
+    });
+
+    const expiredJobsMap = new Map(expiredJobs.map(j => [j.externalId, j.id]));
 
     // Save jobs to database
     for (const jobData of jobsToSave) {
@@ -327,36 +346,74 @@ export async function POST(
           }
         }
 
-        // Create the job
-        await prisma.job.create({
-          data: {
-            externalId: jobData.id as string,
-            title: jobData.title as string,
-            url: jobData.url as string,
-            organizationId: organization.id,
-            datePosted: jobData.date_posted ? new Date(jobData.date_posted as string) : new Date(),
-            dateCreated: jobData.date_created ? new Date(jobData.date_created as string) : (jobData.date_posted ? new Date(jobData.date_posted as string) : new Date()),
-            dateValidThrough: jobData.date_validthrough ? new Date(jobData.date_validthrough as string) : null,
-            descriptionText: jobData.description_text as string || '',
-            locationsRaw: jobData.locations_raw || null,
-            cities: Array.isArray(jobData.cities_derived) ? jobData.cities_derived as string[] : [],
-            counties: Array.isArray(jobData.counties_derived) ? jobData.counties_derived as string[] : [],
-            regions: Array.isArray(jobData.regions_derived) ? jobData.regions_derived as string[] : [],
-            countries: Array.isArray(jobData.countries_derived) ? jobData.countries_derived as string[] : [],
-            locationsFull: Array.isArray(jobData.locations_derived) ? jobData.locations_derived as string[] : [],
-            timezones: Array.isArray(jobData.timezones_derived) ? jobData.timezones_derived as string[] : [],
-            latitude: Array.isArray(jobData.lats_derived) ? jobData.lats_derived as number[] : [],
-            longitude: Array.isArray(jobData.lngs_derived) ? jobData.lngs_derived as number[] : [],
-            isRemote: Boolean(jobData.remote_derived),
-            employmentType: Array.isArray(jobData.employment_type) ? jobData.employment_type as string[] : [],
-            salaryRaw: jobData.salary_raw || null,
-            sourceType: jobData.source_type as string | undefined,
-            source: jobData.source as string | undefined,
-            sourceDomain: jobData.source_domain as string | undefined,
-            lastFetchedAt: new Date(),
-          },
-        });
-        jobsCreated++;
+        // Check if this job was previously expired and needs to be reactivated
+        const expiredJobId = expiredJobsMap.get(jobData.id as string);
+        
+        if (expiredJobId) {
+          // Reactivate the expired job instead of creating a new one
+          await prisma.job.update({
+            where: { id: expiredJobId },
+            data: {
+              // Update all fields with fresh data
+              title: jobData.title as string,
+              url: jobData.url as string,
+              organizationId: organization.id,
+              datePosted: jobData.date_posted ? new Date(jobData.date_posted as string) : new Date(),
+              dateValidThrough: jobData.date_validthrough ? new Date(jobData.date_validthrough as string) : null,
+              descriptionText: jobData.description_text as string || '',
+              locationsRaw: jobData.locations_raw || null,
+              cities: Array.isArray(jobData.cities_derived) ? jobData.cities_derived as string[] : [],
+              counties: Array.isArray(jobData.counties_derived) ? jobData.counties_derived as string[] : [],
+              regions: Array.isArray(jobData.regions_derived) ? jobData.regions_derived as string[] : [],
+              countries: Array.isArray(jobData.countries_derived) ? jobData.countries_derived as string[] : [],
+              locationsFull: Array.isArray(jobData.locations_derived) ? jobData.locations_derived as string[] : [],
+              timezones: Array.isArray(jobData.timezones_derived) ? jobData.timezones_derived as string[] : [],
+              latitude: Array.isArray(jobData.lats_derived) ? jobData.lats_derived as number[] : [],
+              longitude: Array.isArray(jobData.lngs_derived) ? jobData.lngs_derived as number[] : [],
+              isRemote: Boolean(jobData.remote_derived),
+              employmentType: Array.isArray(jobData.employment_type) ? jobData.employment_type as string[] : [],
+              salaryRaw: jobData.salary_raw || null,
+              sourceType: jobData.source_type as string | undefined,
+              source: jobData.source as string | undefined,
+              sourceDomain: jobData.source_domain as string | undefined,
+              lastFetchedAt: new Date(),
+              expiredAt: null, // Remove the expired status
+            },
+          });
+          jobsReactivated++;
+          console.log(`Reactivated previously expired job: ${jobData.id}`);
+        } else {
+          // Create new job
+          await prisma.job.create({
+            data: {
+              externalId: jobData.id as string,
+              title: jobData.title as string,
+              url: jobData.url as string,
+              organizationId: organization.id,
+              datePosted: jobData.date_posted ? new Date(jobData.date_posted as string) : new Date(),
+              dateCreated: jobData.date_created ? new Date(jobData.date_created as string) : (jobData.date_posted ? new Date(jobData.date_posted as string) : new Date()),
+              dateValidThrough: jobData.date_validthrough ? new Date(jobData.date_validthrough as string) : null,
+              descriptionText: jobData.description_text as string || '',
+              locationsRaw: jobData.locations_raw || null,
+              cities: Array.isArray(jobData.cities_derived) ? jobData.cities_derived as string[] : [],
+              counties: Array.isArray(jobData.counties_derived) ? jobData.counties_derived as string[] : [],
+              regions: Array.isArray(jobData.regions_derived) ? jobData.regions_derived as string[] : [],
+              countries: Array.isArray(jobData.countries_derived) ? jobData.countries_derived as string[] : [],
+              locationsFull: Array.isArray(jobData.locations_derived) ? jobData.locations_derived as string[] : [],
+              timezones: Array.isArray(jobData.timezones_derived) ? jobData.timezones_derived as string[] : [],
+              latitude: Array.isArray(jobData.lats_derived) ? jobData.lats_derived as number[] : [],
+              longitude: Array.isArray(jobData.lngs_derived) ? jobData.lngs_derived as number[] : [],
+              isRemote: Boolean(jobData.remote_derived),
+              employmentType: Array.isArray(jobData.employment_type) ? jobData.employment_type as string[] : [],
+              salaryRaw: jobData.salary_raw || null,
+              sourceType: jobData.source_type as string | undefined,
+              source: jobData.source as string | undefined,
+              sourceDomain: jobData.source_domain as string | undefined,
+              lastFetchedAt: new Date(),
+            },
+          });
+          jobsCreated++;
+        }
       } catch (error) {
         console.error('Error saving job:', jobData.id, error);
         
@@ -402,6 +459,7 @@ export async function POST(
       success: true,
       jobsFetched: jobs.length,
       jobsCreated,
+      jobsReactivated,
       duplicatesSkipped: jobs.length - jobsToSave.length,
       orgsCreated,
       orgsUpdated,

@@ -55,6 +55,7 @@ interface JobBoard {
 export default function JobDetailClient({ job }: { job: Job }) {
   const router = useRouter();
   const [expiring, setExpiring] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const [boards, setBoards] = useState<JobBoard[]>([]);
   const [loadingBoards, setLoadingBoards] = useState(false);
@@ -178,6 +179,83 @@ export default function JobDetailClient({ job }: { job: Job }) {
     }
   };
 
+  const handleUnexpire = async () => {
+    if (!job.expiredAt) {
+      alert('This job is not expired.');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to reactivate the job "${job.title}"? This will make it visible in public listings again.`)) {
+      return;
+    }
+
+    setExpiring(true);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/admin/jobs/bulk-unexpire`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jobIds: [job.id],
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to reactivate job');
+      }
+
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      setExpiring(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    const confirmMessage = `⚠️ WARNING: This will PERMANENTLY delete the job "${job.title}".\n\nThis action cannot be undone. The job will be completely removed from the database.\n\nAre you absolutely sure?`;
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    // Double confirmation for delete
+    const secondConfirm = prompt(`Type "DELETE" to confirm permanent deletion of this job:`);
+    if (secondConfirm !== 'DELETE') {
+      alert('Deletion cancelled');
+      return;
+    }
+
+    setDeleting(true);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/admin/jobs/bulk-delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jobIds: [job.id],
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete job');
+      }
+
+      alert('Job successfully deleted');
+      router.push('/admin/jobs');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      setDeleting(false);
+    }
+  };
+
   const formatSalary = () => {
     if (!job.salaryRaw) return null;
     // salaryRaw is a JSON field that might contain salary information
@@ -242,20 +320,29 @@ export default function JobDetailClient({ job }: { job: Job }) {
           >
             View Original →
           </a>
+          {job.expiredAt ? (
+            <button
+              onClick={handleUnexpire}
+              disabled={expiring}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+            >
+              {expiring ? 'Processing...' : 'Reactivate Job'}
+            </button>
+          ) : (
+            <button
+              onClick={handleExpire}
+              disabled={expiring}
+              className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50"
+            >
+              {expiring ? 'Expiring...' : 'Expire Job'}
+            </button>
+          )}
           <button
-            onClick={handleExpire}
-            disabled={expiring || job.expiredAt !== null}
-            className={`px-4 py-2 rounded-md disabled:opacity-50 ${
-              job.expiredAt
-                ? 'bg-gray-400 text-white cursor-not-allowed'
-                : 'bg-orange-600 text-white hover:bg-orange-700'
-            }`}
+            onClick={handleDelete}
+            disabled={deleting}
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
           >
-            {job.expiredAt
-              ? 'Job Expired'
-              : expiring
-              ? 'Expiring...'
-              : 'Expire Job'}
+            {deleting ? 'Deleting...' : 'Delete Job'}
           </button>
         </div>
       </div>
