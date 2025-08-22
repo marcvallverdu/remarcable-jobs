@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:board": "NEXT_PUBLIC_BOARD_SLUG=tech-jobs next dev --turbopack",
     "build": "prisma generate && next build",
     "start": "NODE_OPTIONS='--max-old-space-size=512' next start",
     "lint": "next lint",

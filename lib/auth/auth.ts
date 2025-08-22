@@ -6,6 +6,10 @@ import { prisma } from '@/lib/db/prisma';
 let authInstance: ReturnType<typeof betterAuth> | null = null;
 
 function createAuth() {
+  // Get deployment type to configure auth appropriately
+  const deploymentType = process.env.NEXT_PUBLIC_DEPLOYMENT_TYPE; // 'admin' or 'board'
+  const boardSlug = process.env.NEXT_PUBLIC_BOARD_SLUG;
+  
   // Get secret at runtime, not build time
   const secret = process.env.BETTER_AUTH_SECRET;
   
@@ -22,14 +26,44 @@ function createAuth() {
     console.error('BETTER_AUTH_SECRET must be a hex string! Got:', secret.substring(0, 10) + '...');
   }
   
-  console.log('Initializing Better Auth with secret length:', authSecret?.length);
+  console.log('Initializing Better Auth for deployment type:', deploymentType || 'development');
+  
+  // Determine base URL with proper fallbacks
+  let baseURL = 'http://localhost:3000'; // Safe default
+  if (process.env.BETTER_AUTH_URL) {
+    baseURL = process.env.BETTER_AUTH_URL;
+  } else if (process.env.NEXT_PUBLIC_APP_URL) {
+    baseURL = process.env.NEXT_PUBLIC_APP_URL;
+  } else if (process.env.NEXT_PUBLIC_BASE_URL) {
+    baseURL = process.env.NEXT_PUBLIC_BASE_URL;
+  } else if (process.env.VERCEL_URL) {
+    // Vercel provides this automatically
+    baseURL = `https://${process.env.VERCEL_URL}`;
+  }
+  
+  // Determine cookie name based on deployment type
+  let cookieName = 'auth-session'; // Default for development
+  let sessionExpiresIn = 60 * 60 * 24 * 7; // Default: 7 days
+  
+  if (deploymentType === 'admin') {
+    cookieName = 'admin-auth-session';
+    sessionExpiresIn = 60 * 60 * 4; // Admin sessions: 4 hours for security
+  } else if (deploymentType === 'board' && boardSlug) {
+    cookieName = `board-${boardSlug}-session`;
+    sessionExpiresIn = 60 * 60 * 24 * 30; // Board sessions: 30 days
+  }
   
   return betterAuth({
     database: prismaAdapter(prisma, {
       provider: 'postgresql',
     }),
-    baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    baseURL,
     secret: authSecret,
+    session: {
+      cookieName,
+      expiresIn: sessionExpiresIn,
+      updateAge: sessionExpiresIn / 4, // Update session when 1/4 of time remaining
+    },
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: false,
@@ -39,6 +73,17 @@ function createAuth() {
         isAdmin: {
           type: 'boolean',
           defaultValue: false,
+          required: false,
+        },
+        boardAccess: {
+          type: 'string[]', // Array of board slugs the user can access
+          defaultValue: [],
+          required: false,
+        },
+        userType: {
+          type: 'string', // 'admin', 'employer', 'candidate'
+          defaultValue: 'employer',
+          required: false,
         },
       },
     },
@@ -47,6 +92,7 @@ function createAuth() {
           'https://remarcablejobs.com',
           'https://www.remarcablejobs.com',
           'https://remarcable-jobs.vercel.app',
+          baseURL, // Include the current deployment's URL
           process.env.NEXT_PUBLIC_APP_URL || '',
         ].filter(Boolean)
       : ['http://localhost:3000'],

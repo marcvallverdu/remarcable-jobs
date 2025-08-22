@@ -4,6 +4,55 @@ import { checkRateLimit } from './lib/rate-limiter';
 
 export async function middleware(request: NextRequest) {
   const origin = request.headers.get('origin');
+  const pathname = request.nextUrl.pathname;
+  
+  // Deployment-based routing (production only)
+  const deploymentType = process.env.NEXT_PUBLIC_DEPLOYMENT_TYPE; // 'admin' or 'board'
+  const boardSlug = process.env.NEXT_PUBLIC_BOARD_SLUG;
+  
+  // Apply routing rules in production only
+  if (process.env.NODE_ENV === 'production' && deploymentType) {
+    // Admin deployment: only allow admin routes
+    if (deploymentType === 'admin') {
+      // Block non-admin routes
+      if (!pathname.startsWith('/admin') && 
+          !pathname.startsWith('/api/admin') &&
+          !pathname.startsWith('/api/auth') &&
+          !pathname.startsWith('/login') &&
+          !pathname.startsWith('/signup') &&
+          !pathname.startsWith('/unauthorized') &&
+          !pathname.startsWith('/_next') &&
+          pathname !== '/') {
+        return NextResponse.rewrite(new URL('/unauthorized', request.url));
+      }
+      
+      // Redirect root to admin
+      if (pathname === '/') {
+        return NextResponse.redirect(new URL('/admin', request.url));
+      }
+    }
+    
+    // Board deployment: only allow specific board routes
+    if (deploymentType === 'board' && boardSlug) {
+      // Block admin routes completely - return 404 to hide their existence
+      if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
+        return new NextResponse('Not Found', { status: 404 });
+      }
+      
+      // Redirect root to specific board
+      if (pathname === '/') {
+        return NextResponse.redirect(new URL(`/boards/${boardSlug}`, request.url));
+      }
+      
+      // Block access to other boards
+      if (pathname.startsWith('/boards/')) {
+        const requestedBoard = pathname.split('/')[2];
+        if (requestedBoard && requestedBoard !== boardSlug) {
+          return new NextResponse('Not Found', { status: 404 });
+        }
+      }
+    }
+  }
   
   // Skip middleware CORS for auth routes - they handle their own CORS
   if (request.nextUrl.pathname.startsWith('/api/auth/')) {

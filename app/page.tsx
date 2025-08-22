@@ -52,9 +52,9 @@ export default function Home() {
           </Link>
 
           {/* Public Job Boards */}
-          <a
+          <Link
             href="/boards"
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow opacity-50 cursor-not-allowed"
+            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
           >
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -64,10 +64,10 @@ export default function Home() {
               </div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Job Boards</h2>
               <p className="text-gray-600">
-                Browse public job boards (Coming Soon)
+                Browse public job boards
               </p>
             </div>
-          </a>
+          </Link>
         </div>
 
         <div className="mt-16 text-center">
