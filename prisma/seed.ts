@@ -60,9 +60,9 @@ async function main() {
         // Check if organization exists
         let organization = null;
         
-        if (apiJob.company_linkedin_slug) {
+        if (apiJob.linkedin_org_slug) {
           organization = await prisma.organization.findUnique({
-            where: { linkedinSlug: apiJob.company_linkedin_slug },
+            where: { linkedinSlug: apiJob.linkedin_org_slug },
           });
         }
         
@@ -96,7 +96,7 @@ async function main() {
         const job = await prisma.job.create({
           data: jobData,
         });
-        console.log(`Created job: ${job.title} at ${apiJob.company_name}`);
+        console.log(`Created job: ${job.title} at ${apiJob.organization}`);
       }
     } catch (error) {
       console.error(`Error processing job ${apiJob.id}:`, error);

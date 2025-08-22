@@ -5,22 +5,22 @@ export function mapApiToOrganization(
   apiJob: FantasticJobsResponse
 ): Prisma.OrganizationCreateInput {
   return {
-    name: apiJob.company_name,
-    url: apiJob.company_url || null,
-    logo: apiJob.company_logo || null,
+    name: apiJob.organization,
+    url: apiJob.organization_url || null,
+    logo: apiJob.organization_logo || null,
     domain: apiJob.domain_derived || null,
-    linkedinUrl: apiJob.company_linkedin_url || null,
-    linkedinSlug: apiJob.company_linkedin_slug || null,
-    linkedinEmployees: apiJob.company_employees || null,
-    linkedinSize: apiJob.company_size || null,
-    linkedinIndustry: apiJob.company_industry || null,
-    linkedinType: apiJob.company_type || null,
-    linkedinFoundedDate: apiJob.company_founded_date || null,
-    linkedinFollowers: apiJob.company_followers || null,
-    linkedinHeadquarters: apiJob.company_headquarters || null,
-    linkedinSpecialties: apiJob.company_specialties || [],
-    linkedinLocations: apiJob.company_locations || [],
-    linkedinDescription: apiJob.company_description || null,
+    linkedinUrl: apiJob.linkedin_org_url || null,
+    linkedinSlug: apiJob.linkedin_org_slug || null,
+    linkedinEmployees: apiJob.linkedin_org_employees || null,
+    linkedinSize: apiJob.linkedin_org_size || null,
+    linkedinIndustry: apiJob.linkedin_org_industry || null,
+    linkedinType: apiJob.linkedin_org_type || null,
+    linkedinFoundedDate: apiJob.linkedin_org_foundeddate || null,
+    linkedinFollowers: apiJob.linkedin_org_followers || null,
+    linkedinHeadquarters: apiJob.linkedin_org_headquarters || null,
+    linkedinSpecialties: apiJob.linkedin_org_specialties || [],
+    linkedinLocations: apiJob.linkedin_org_locations || [],
+    linkedinDescription: apiJob.linkedin_org_description || null,
   };
 }
 
@@ -32,8 +32,8 @@ export function mapApiToJob(
     externalId: apiJob.id,
     datePosted: new Date(apiJob.date_posted),
     dateCreated: new Date(apiJob.date_created),
-    dateValidThrough: apiJob.date_valid_through 
-      ? new Date(apiJob.date_valid_through) 
+    dateValidThrough: apiJob.date_validthrough 
+      ? new Date(apiJob.date_validthrough) 
       : null,
     title: apiJob.title,
     organization: {
@@ -41,20 +41,20 @@ export function mapApiToJob(
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     locationsRaw: apiJob.locations_raw as any || undefined,
-    cities: apiJob.cities || [],
-    counties: apiJob.counties || [],
-    regions: apiJob.regions || [],
-    countries: apiJob.countries || [],
-    locationsFull: apiJob.locations_full || [],
-    timezones: apiJob.timezones || [],
-    latitude: apiJob.latitude || [],
-    longitude: apiJob.longitude || [],
-    isRemote: apiJob.remote || false,
-    employmentType: apiJob.employment_types || [],
+    cities: apiJob.cities_derived || [],
+    counties: apiJob.counties_derived || [],
+    regions: apiJob.regions_derived || [],
+    countries: apiJob.countries_derived || [],
+    locationsFull: apiJob.locations_derived || [],
+    timezones: apiJob.timezones_derived || [],
+    latitude: apiJob.lats_derived || [],
+    longitude: apiJob.lngs_derived || [],
+    isRemote: apiJob.remote_derived || false,
+    employmentType: apiJob.employment_type || [],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     salaryRaw: apiJob.salary_raw as any || undefined,
     url: apiJob.url,
-    descriptionText: apiJob.description,
+    descriptionText: apiJob.description_text,
     sourceType: apiJob.source_type || null,
     source: apiJob.source || null,
     sourceDomain: apiJob.source_domain || null,
@@ -64,12 +64,12 @@ export function mapApiToJob(
 
 export function extractUniqueOrganizationKey(apiJob: FantasticJobsResponse): string {
   // Priority order for unique organization identification
-  if (apiJob.company_linkedin_slug) {
-    return `linkedin:${apiJob.company_linkedin_slug}`;
+  if (apiJob.linkedin_org_slug) {
+    return `linkedin:${apiJob.linkedin_org_slug}`;
   }
   if (apiJob.domain_derived) {
     return `domain:${apiJob.domain_derived}`;
   }
   // Fallback to organization name (less reliable but necessary)
-  return `name:${apiJob.company_name.toLowerCase().replace(/\s+/g, '-')}`;
+  return `name:${apiJob.organization.toLowerCase().replace(/\s+/g, '-')}`;
 }
