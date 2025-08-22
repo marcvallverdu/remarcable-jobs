@@ -1,19 +1,29 @@
-# Remarcable Jobs - Data Flow Documentation
+# Remarcable Jobs - Project Documentation
 
-## API to Database Field Mapping
+## Overview
 
-This document describes the data flow from the Fantastic Jobs API to our database, including all field mappings.
+Remarcable Jobs is a job board platform that fetches job listings from the Fantastic Jobs API and provides comprehensive management capabilities. This documentation is distributed across the codebase for context-specific guidance.
+
+## Distributed Documentation
+
+For detailed, context-specific documentation, see:
+
+- **[/lib/fantastic-jobs/CLAUDE.md](./lib/fantastic-jobs/CLAUDE.md)** - API field mappings and integration
+- **[/app/api/admin/queries/CLAUDE.md](./app/api/admin/queries/CLAUDE.md)** - Query execution and API routes
+- **[/app/admin/jobs/CLAUDE.md](./app/admin/jobs/CLAUDE.md)** - Jobs management UI and bulk operations
+- **[/prisma/CLAUDE.md](./prisma/CLAUDE.md)** - Database schema and field mappings
 
 ## Data Flow Overview
 
 ```
 1. Fantastic Jobs API → Returns raw job data with specific field names
-2. JobsFetcher → Fetches jobs using API client
-3. Mapper Functions → Transform API fields to database fields
-4. Prisma → Saves to PostgreSQL database
+2. Query Execution → Fetches jobs via RapidAPI with field mapping
+3. Data Processing → Transform API fields to database fields
+4. Prisma ORM → Saves to PostgreSQL database
+5. Admin UI → Manage jobs with bulk operations
 ```
 
-## Critical Field Names from API
+## Quick Reference - Critical Field Names
 
 The API returns fields with these EXACT names (verified from sample-response.json):
 
@@ -136,37 +146,52 @@ Transforms API organization fields to database fields:
 - Removes `linkedin_org_` prefix from LinkedIn fields
 - Handles optional fields with null defaults
 
-## Common Pitfalls to Avoid
+## Most Common Field Mapping Mistakes
 
-1. **DO NOT** assume field names - always check sample-response.json
-2. **DO NOT** use `company_name` - the API returns `organization`
-3. **DO NOT** use `description` - the API returns `description_text`
-4. **DO NOT** use `employment_types` - the API returns `employment_type` (singular)
-5. **DO NOT** use `date_valid_through` - the API returns `date_validthrough` (no underscore)
-6. **DO NOT** forget the `_derived` suffix on location fields from the API
-7. **DO NOT** forget the `linkedin_org_` prefix on LinkedIn fields from the API
+**CRITICAL - These cause 90% of issues:**
 
-## Testing the Flow
+1. ❌ `company_name` → ✅ `organization`
+2. ❌ `description` → ✅ `description_text`  
+3. ❌ `employment_types` → ✅ `employment_type` (singular)
+4. ❌ `date_valid_through` → ✅ `date_validthrough` (no underscore)
+5. ❌ `cities` → ✅ `cities_derived` (when reading from API)
+6. ❌ `linkedin_url` → ✅ `linkedin_org_url` (when reading from API)
 
-To verify the data flow is working:
+## Job Lifecycle & Operations
 
-1. Create a query in the admin panel
-2. Run preview to see raw API data
-3. Save selected jobs
-4. Check the database to verify all fields are populated correctly
+### Job States:
+- **Active**: `expiredAt = null` - Visible publicly
+- **Expired**: `expiredAt = Date` - Hidden from public, visible in admin
+- **Deleted**: Removed from database entirely
 
-## Files Involved in Data Flow
+### Key Behaviors:
+- Expired jobs are **excluded** from duplicate checks
+- Re-importing expired jobs **reactivates** them (doesn't create duplicates)
+- Deleting jobs **cleans up** orphaned organizations automatically
 
-- `/lib/fantastic-jobs/types.ts` - Type definitions matching API response
-- `/lib/fantastic-jobs/mapper.ts` - Field mapping functions
-- `/lib/fantastic-jobs/fetcher.ts` - Fetches and saves jobs
-- `/lib/fantastic-jobs/client.ts` - API client
-- `/prisma/schema.prisma` - Database schema
-- `/sample-response.json` - Example API response for reference
+## Essential Commands
 
-## Run Commands
+```bash
+# Build and check for type errors before committing
+npm run build
 
-When working with job fetching:
-- Always run `npm run build` before committing to catch type errors
-- Check `/sample-response.json` when unsure about field names
-- Use the preview feature to see actual API responses before saving
+# Run database migrations
+npx prisma migrate dev
+
+# Check actual API response structure
+cat sample-response.json | jq '.[0]' | head -50
+```
+
+## Where to Find Specific Information
+
+- **API Field Names**: Check `/sample-response.json` or `/lib/fantastic-jobs/CLAUDE.md`
+- **Database Schema**: See `/prisma/schema.prisma` or `/prisma/CLAUDE.md`
+- **Query Execution Issues**: See `/app/api/admin/queries/CLAUDE.md`
+- **UI/Bulk Operations**: See `/app/admin/jobs/CLAUDE.md`
+
+## Important Files
+
+- `/sample-response.json` - Actual API response example (ground truth for field names)
+- `/app/api/admin/queries/[id]/execute/route.ts` - Main query execution (NOT /run)
+- `/lib/fantastic-jobs/mapper.ts` - Field transformation logic
+- `/prisma/schema.prisma` - Database structure
