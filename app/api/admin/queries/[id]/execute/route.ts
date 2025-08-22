@@ -201,54 +201,130 @@ export async function POST(
     // Save jobs to database
     for (const jobData of jobsToSave) {
       try {
+        // Validate required fields first
+        if (!jobData.id || !jobData.title || !jobData.url) {
+          console.error('Missing required job fields:', { 
+            id: jobData.id, 
+            title: jobData.title, 
+            url: jobData.url 
+          });
+          errors.push(`Job ${jobData.id || 'unknown'}: Missing required fields`);
+          continue;
+        }
+        
+        // Validate date fields
+        if (jobData.date_posted && isNaN(Date.parse(jobData.date_posted as string))) {
+          console.error(`Invalid date_posted for job ${jobData.id}:`, jobData.date_posted);
+          errors.push(`Job ${jobData.id}: Invalid date_posted value`);
+          continue;
+        }
+        
         // First, handle the organization
-        const companyName = (jobData.company_name as string) || 'Unknown Company';
+        // API returns 'organization' not 'company_name'
+        const companyName = (jobData.organization as string) || 'Unknown Company';
+        
+        // Build conditions for finding existing organization
+        const orgConditions = [];
+        
+        // Check by LinkedIn slug (most reliable)
+        if (jobData.linkedin_org_slug) {
+          orgConditions.push({ linkedinSlug: jobData.linkedin_org_slug as string });
+        }
+        
+        // Check by domain (also unique)
+        if (jobData.domain_derived) {
+          orgConditions.push({ domain: jobData.domain_derived as string });
+        }
+        
+        // Check by name as fallback
+        orgConditions.push({ name: companyName });
         
         let organization = await prisma.organization.findFirst({
           where: {
-            OR: [
-              { name: companyName },
-              { linkedinSlug: jobData.company_linkedin_slug as string | undefined },
-            ],
+            OR: orgConditions,
           },
         });
 
         if (!organization) {
-          // Create new organization
-          organization = await prisma.organization.create({
-            data: {
+          // Create new organization - handle potential race condition
+          try {
+            organization = await prisma.organization.create({
+              data: {
               name: companyName,
-              url: jobData.company_url as string | undefined,
-              logo: jobData.company_logo as string | undefined,
-              linkedinUrl: jobData.company_linkedin_url as string | undefined,
-              linkedinSlug: jobData.company_linkedin_slug as string | undefined,
-              linkedinEmployees: jobData.company_employees as number | undefined,
-              linkedinSize: jobData.company_size as string | undefined,
-              linkedinIndustry: jobData.company_industry as string | undefined,
-              linkedinType: jobData.company_type as string | undefined,
-              linkedinFollowers: jobData.company_followers as number | undefined,
-              linkedinHeadquarters: jobData.company_headquarters as string | undefined,
-              linkedinSpecialties: [],
-              linkedinLocations: [],
+              url: jobData.organization_url as string | undefined,
+              logo: jobData.organization_logo as string | undefined,
+              domain: jobData.domain_derived as string | undefined,
+              linkedinUrl: jobData.linkedin_org_url as string | undefined,
+              linkedinSlug: jobData.linkedin_org_slug as string | undefined,
+              linkedinEmployees: jobData.linkedin_org_employees as number | undefined,
+              linkedinSize: jobData.linkedin_org_size as string | undefined,
+              linkedinIndustry: jobData.linkedin_org_industry as string | undefined,
+              linkedinType: jobData.linkedin_org_type as string | undefined,
+              linkedinFollowers: jobData.linkedin_org_followers as number | undefined,
+              linkedinHeadquarters: jobData.linkedin_org_headquarters as string | undefined,
+              linkedinSpecialties: Array.isArray(jobData.linkedin_org_specialties) ? jobData.linkedin_org_specialties as string[] : [],
+              linkedinLocations: Array.isArray(jobData.linkedin_org_locations) ? jobData.linkedin_org_locations as string[] : [],
+              linkedinDescription: jobData.linkedin_org_description as string | undefined,
+              linkedinFoundedDate: jobData.linkedin_org_foundeddate as string | undefined,
             },
           });
           orgsCreated++;
-        } else if (jobData.company_linkedin_url && !organization.linkedinUrl) {
-          // Update organization with LinkedIn data
-          await prisma.organization.update({
-            where: { id: organization.id },
-            data: {
-              linkedinUrl: jobData.company_linkedin_url as string | undefined,
-              linkedinSlug: jobData.company_linkedin_slug as string | undefined,
-              linkedinEmployees: jobData.company_employees as number | undefined,
-              linkedinSize: jobData.company_size as string | undefined,
-              linkedinIndustry: jobData.company_industry as string | undefined,
-              linkedinType: jobData.company_type as string | undefined,
-              linkedinFollowers: jobData.company_followers as number | undefined,
-              linkedinHeadquarters: jobData.company_headquarters as string | undefined,
-            },
-          });
-          orgsUpdated++;
+        } catch (createError) {
+          // Handle race condition - another request might have created it
+          if (createError instanceof Error && createError.message.includes('Unique constraint')) {
+            // Try to find the organization again
+            organization = await prisma.organization.findFirst({
+              where: {
+                OR: orgConditions,
+              },
+            });
+            
+            if (!organization) {
+              throw createError; // Re-throw if we still can't find it
+            }
+          } else {
+            throw createError;
+          }
+        }
+        }
+        
+        // Ensure we have an organization before proceeding
+        if (!organization) {
+          console.error(`Failed to create or find organization for job ${jobData.id}`);
+          errors.push(`Job ${jobData.id}: Failed to create or find organization`);
+          continue;
+        }
+        
+        if (jobData.linkedin_org_url && !organization.linkedinUrl) {
+          // Update organization with LinkedIn data only if we have new data
+          const updateData: Record<string, unknown> = {};
+          
+          // Only update fields that have values
+          if (jobData.linkedin_org_url) updateData.linkedinUrl = jobData.linkedin_org_url;
+          if (jobData.linkedin_org_slug) updateData.linkedinSlug = jobData.linkedin_org_slug;
+          if (jobData.linkedin_org_employees) updateData.linkedinEmployees = jobData.linkedin_org_employees;
+          if (jobData.linkedin_org_size) updateData.linkedinSize = jobData.linkedin_org_size;
+          if (jobData.linkedin_org_industry) updateData.linkedinIndustry = jobData.linkedin_org_industry;
+          if (jobData.linkedin_org_type) updateData.linkedinType = jobData.linkedin_org_type;
+          if (jobData.linkedin_org_followers) updateData.linkedinFollowers = jobData.linkedin_org_followers;
+          if (jobData.linkedin_org_headquarters) updateData.linkedinHeadquarters = jobData.linkedin_org_headquarters;
+          if (Array.isArray(jobData.linkedin_org_specialties) && jobData.linkedin_org_specialties.length > 0) {
+            updateData.linkedinSpecialties = jobData.linkedin_org_specialties;
+          }
+          if (Array.isArray(jobData.linkedin_org_locations) && jobData.linkedin_org_locations.length > 0) {
+            updateData.linkedinLocations = jobData.linkedin_org_locations;
+          }
+          if (jobData.linkedin_org_description) updateData.linkedinDescription = jobData.linkedin_org_description;
+          if (jobData.linkedin_org_foundeddate) updateData.linkedinFoundedDate = jobData.linkedin_org_foundeddate;
+          
+          // Only update if we have data to update
+          if (Object.keys(updateData).length > 0) {
+            await prisma.organization.update({
+              where: { id: organization.id },
+              data: updateData,
+            });
+            orgsUpdated++;
+          }
         }
 
         // Create the job
@@ -258,21 +334,22 @@ export async function POST(
             title: jobData.title as string,
             url: jobData.url as string,
             organizationId: organization.id,
-            datePosted: new Date(jobData.date_posted as string),
-            dateCreated: new Date(jobData.date_created as string || jobData.date_posted as string),
-            dateValidThrough: jobData.date_valid_through ? new Date(jobData.date_valid_through as string) : null,
-            descriptionText: jobData.description as string || '',
-            cities: Array.isArray(jobData.cities) ? jobData.cities as string[] : [],
-            counties: Array.isArray(jobData.counties) ? jobData.counties as string[] : [],
-            regions: Array.isArray(jobData.regions) ? jobData.regions as string[] : [],
-            countries: Array.isArray(jobData.countries) ? jobData.countries as string[] : [],
-            locationsFull: Array.isArray(jobData.locations_full) ? jobData.locations_full as string[] : [],
-            timezones: Array.isArray(jobData.timezones) ? jobData.timezones as string[] : [],
-            latitude: Array.isArray(jobData.latitude) ? jobData.latitude as number[] : [],
-            longitude: Array.isArray(jobData.longitude) ? jobData.longitude as number[] : [],
-            isRemote: Boolean(jobData.remote),
-            employmentType: Array.isArray(jobData.employment_types) ? jobData.employment_types as string[] : [],
-            salaryRaw: jobData.salary || null,
+            datePosted: jobData.date_posted ? new Date(jobData.date_posted as string) : new Date(),
+            dateCreated: jobData.date_created ? new Date(jobData.date_created as string) : (jobData.date_posted ? new Date(jobData.date_posted as string) : new Date()),
+            dateValidThrough: jobData.date_validthrough ? new Date(jobData.date_validthrough as string) : null,
+            descriptionText: jobData.description_text as string || '',
+            locationsRaw: jobData.locations_raw || null,
+            cities: Array.isArray(jobData.cities_derived) ? jobData.cities_derived as string[] : [],
+            counties: Array.isArray(jobData.counties_derived) ? jobData.counties_derived as string[] : [],
+            regions: Array.isArray(jobData.regions_derived) ? jobData.regions_derived as string[] : [],
+            countries: Array.isArray(jobData.countries_derived) ? jobData.countries_derived as string[] : [],
+            locationsFull: Array.isArray(jobData.locations_derived) ? jobData.locations_derived as string[] : [],
+            timezones: Array.isArray(jobData.timezones_derived) ? jobData.timezones_derived as string[] : [],
+            latitude: Array.isArray(jobData.lats_derived) ? jobData.lats_derived as number[] : [],
+            longitude: Array.isArray(jobData.lngs_derived) ? jobData.lngs_derived as number[] : [],
+            isRemote: Boolean(jobData.remote_derived),
+            employmentType: Array.isArray(jobData.employment_type) ? jobData.employment_type as string[] : [],
+            salaryRaw: jobData.salary_raw || null,
             sourceType: jobData.source_type as string | undefined,
             source: jobData.source as string | undefined,
             sourceDomain: jobData.source_domain as string | undefined,
@@ -281,8 +358,20 @@ export async function POST(
         });
         jobsCreated++;
       } catch (error) {
-        console.error('Error saving job:', error);
-        errors.push(`Failed to save job ${jobData.id}: ${error}`);
+        console.error('Error saving job:', jobData.id, error);
+        
+        // Provide more specific error messages
+        if (error instanceof Error) {
+          if (error.message.includes('Unique constraint')) {
+            errors.push(`Job ${jobData.id}: Duplicate organization constraint (domain or slug)`);
+          } else if (error.message.includes('Foreign key constraint')) {
+            errors.push(`Job ${jobData.id}: Failed to link to organization`);
+          } else {
+            errors.push(`Job ${jobData.id}: ${error.message}`);
+          }
+        } else {
+          errors.push(`Job ${jobData.id}: Unknown error`);
+        }
       }
     }
 
