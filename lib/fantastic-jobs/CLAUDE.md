@@ -1,5 +1,9 @@
 # Fantastic Jobs API Integration
 
+## Documentation
+
+https://rapidapi.com/fantastic-jobs-fantastic-jobs-default/api/active-jobs-db
+
 ## Critical Field Mapping Rules
 
 This directory handles all interactions with the Fantastic Jobs API. The API returns specific field names that MUST be mapped correctly to our database schema.
