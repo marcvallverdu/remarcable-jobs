@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db/prisma';
 import { auth } from '@/lib/auth/auth';
 import { headers } from 'next/headers';
 import Link from 'next/link';
+import RunQueryButton from './RunQueryButton';
 
 async function getQueries(userId: string) {
   const queries = await prisma.savedQuery.findMany({
@@ -104,18 +105,13 @@ export default async function AdminQueriesPage() {
                     </div>
                     
                     <div className="ml-4 flex flex-col gap-2">
+                      <RunQueryButton queryId={query.id} />
                       <Link
-                        href={`/api/admin/queries/${query.id}/run`}
-                        className="text-sm text-indigo-600 hover:text-indigo-900"
-                      >
-                        Run Query
-                      </Link>
-                      <a
                         href={`/admin/queries/${query.id}`}
                         className="text-sm text-gray-600 hover:text-gray-900"
                       >
                         Edit
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 </div>
