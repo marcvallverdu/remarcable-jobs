@@ -100,16 +100,16 @@ export async function POST(
     if (parameters.date_filter) queryParams.date_filter = parameters.date_filter as string;
     if (parameters.organization_exclusion_filter) queryParams.organization_exclusion_filter = parameters.organization_exclusion_filter as string;
     
-    // AI filters
-    if (parameters.include_ai) queryParams.include_ai = (parameters.include_ai as boolean).toString();
+    // AI filters - Enable AI by default
+    queryParams.include_ai = parameters.include_ai !== false ? 'true' : 'false';
     if (parameters.ai_employment_type_filter) queryParams.ai_employment_type_filter = parameters.ai_employment_type_filter as string;
     if (parameters.ai_work_arrangement_filter) queryParams.ai_work_arrangement_filter = parameters.ai_work_arrangement_filter as string;
     if (parameters.ai_has_salary) queryParams.ai_has_salary = (parameters.ai_has_salary as boolean).toString();
     if (parameters.ai_experience_level_filter) queryParams.ai_experience_level_filter = parameters.ai_experience_level_filter as string;
     if (parameters.ai_visa_sponsorship_filter) queryParams.ai_visa_sponsorship_filter = (parameters.ai_visa_sponsorship_filter as boolean).toString();
     
-    // LinkedIn filters
-    if (parameters.include_li) queryParams.include_li = (parameters.include_li as boolean).toString();
+    // LinkedIn filters - Enable LinkedIn by default  
+    queryParams.include_li = parameters.include_li !== false ? 'true' : 'false';
     if (parameters.li_organization_slug_filter) queryParams.li_organization_slug_filter = parameters.li_organization_slug_filter as string;
     if (parameters.li_organization_slug_exclusion_filter) queryParams.li_organization_slug_exclusion_filter = parameters.li_organization_slug_exclusion_filter as string;
     if (parameters.li_industry_filter) queryParams.li_industry_filter = parameters.li_industry_filter as string;
@@ -285,6 +285,8 @@ export async function POST(
               linkedinLocations: Array.isArray(jobData.linkedin_org_locations) ? jobData.linkedin_org_locations as string[] : [],
               linkedinDescription: jobData.linkedin_org_description as string | undefined,
               linkedinFoundedDate: jobData.linkedin_org_foundeddate as string | undefined,
+              linkedinSlogan: jobData.linkedin_org_slogan as string | undefined,
+              linkedinRecruitmentAgency: jobData.linkedin_org_recruitment_agency_derived as boolean | undefined,
             },
           });
           orgsCreated++;
@@ -335,6 +337,8 @@ export async function POST(
           }
           if (jobData.linkedin_org_description) updateData.linkedinDescription = jobData.linkedin_org_description;
           if (jobData.linkedin_org_foundeddate) updateData.linkedinFoundedDate = jobData.linkedin_org_foundeddate;
+          if (jobData.linkedin_org_slogan) updateData.linkedinSlogan = jobData.linkedin_org_slogan;
+          if (jobData.linkedin_org_recruitment_agency_derived) updateData.linkedinRecruitmentAgency = jobData.linkedin_org_recruitment_agency_derived;
           
           // Only update if we have data to update
           if (Object.keys(updateData).length > 0) {
@@ -376,6 +380,29 @@ export async function POST(
               sourceType: jobData.source_type as string | undefined,
               source: jobData.source as string | undefined,
               sourceDomain: jobData.source_domain as string | undefined,
+              
+              // AI-powered analysis fields
+              aiSalaryCurrency: jobData.ai_salary_currency as string | undefined,
+              aiSalaryValue: jobData.ai_salary_value as number | undefined,
+              aiSalaryMinValue: jobData.ai_salary_minvalue as number | undefined,
+              aiSalaryMaxValue: jobData.ai_salary_maxvalue as number | undefined,
+              aiSalaryUnitText: jobData.ai_salary_unittext as string | undefined,
+              aiBenefits: Array.isArray(jobData.ai_benefits) ? jobData.ai_benefits as string[] : [],
+              aiExperienceLevel: jobData.ai_experience_level as string | undefined,
+              aiWorkArrangement: jobData.ai_work_arrangement as string | undefined,
+              aiWorkArrangementOfficeDays: jobData.ai_work_arrangement_office_days as number | undefined,
+              aiRemoteLocation: Array.isArray(jobData.ai_remote_location) ? jobData.ai_remote_location as string[] : [],
+              aiRemoteLocationDerived: Array.isArray(jobData.ai_remote_location_derived) ? jobData.ai_remote_location_derived as string[] : [],
+              aiKeySkills: Array.isArray(jobData.ai_key_skills) ? jobData.ai_key_skills as string[] : [],
+              aiCoreResponsibilities: jobData.ai_core_responsibilities as string | undefined,
+              aiRequirementsSummary: jobData.ai_requirements_summary as string | undefined,
+              aiHiringManagerName: jobData.ai_hiring_manager_name as string | undefined,
+              aiHiringManagerEmailAddress: jobData.ai_hiring_manager_email_address as string | undefined,
+              aiWorkingHours: jobData.ai_working_hours as number | undefined,
+              aiEmploymentType: Array.isArray(jobData.ai_employment_type) ? jobData.ai_employment_type as string[] : [],
+              aiJobLanguage: jobData.ai_job_language as string | undefined,
+              aiVisaSponsorship: jobData.ai_visa_sponsorship as boolean | undefined,
+              
               lastFetchedAt: new Date(),
               expiredAt: null, // Remove the expired status
             },
@@ -409,6 +436,29 @@ export async function POST(
               sourceType: jobData.source_type as string | undefined,
               source: jobData.source as string | undefined,
               sourceDomain: jobData.source_domain as string | undefined,
+              
+              // AI-powered analysis fields
+              aiSalaryCurrency: jobData.ai_salary_currency as string | undefined,
+              aiSalaryValue: jobData.ai_salary_value as number | undefined,
+              aiSalaryMinValue: jobData.ai_salary_minvalue as number | undefined,
+              aiSalaryMaxValue: jobData.ai_salary_maxvalue as number | undefined,
+              aiSalaryUnitText: jobData.ai_salary_unittext as string | undefined,
+              aiBenefits: Array.isArray(jobData.ai_benefits) ? jobData.ai_benefits as string[] : [],
+              aiExperienceLevel: jobData.ai_experience_level as string | undefined,
+              aiWorkArrangement: jobData.ai_work_arrangement as string | undefined,
+              aiWorkArrangementOfficeDays: jobData.ai_work_arrangement_office_days as number | undefined,
+              aiRemoteLocation: Array.isArray(jobData.ai_remote_location) ? jobData.ai_remote_location as string[] : [],
+              aiRemoteLocationDerived: Array.isArray(jobData.ai_remote_location_derived) ? jobData.ai_remote_location_derived as string[] : [],
+              aiKeySkills: Array.isArray(jobData.ai_key_skills) ? jobData.ai_key_skills as string[] : [],
+              aiCoreResponsibilities: jobData.ai_core_responsibilities as string | undefined,
+              aiRequirementsSummary: jobData.ai_requirements_summary as string | undefined,
+              aiHiringManagerName: jobData.ai_hiring_manager_name as string | undefined,
+              aiHiringManagerEmailAddress: jobData.ai_hiring_manager_email_address as string | undefined,
+              aiWorkingHours: jobData.ai_working_hours as number | undefined,
+              aiEmploymentType: Array.isArray(jobData.ai_employment_type) ? jobData.ai_employment_type as string[] : [],
+              aiJobLanguage: jobData.ai_job_language as string | undefined,
+              aiVisaSponsorship: jobData.ai_visa_sponsorship as boolean | undefined,
+              
               lastFetchedAt: new Date(),
             },
           });

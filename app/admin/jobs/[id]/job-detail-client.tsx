@@ -34,12 +34,37 @@ interface Job {
   updatedAt: Date;
   lastFetchedAt: Date | null;
   expiredAt: Date | null;
+  
+  // AI-powered analysis fields
+  aiSalaryCurrency: string | null;
+  aiSalaryValue: number | null;
+  aiSalaryMinValue: number | null;
+  aiSalaryMaxValue: number | null;
+  aiSalaryUnitText: string | null;
+  aiBenefits: string[];
+  aiExperienceLevel: string | null;
+  aiWorkArrangement: string | null;
+  aiWorkArrangementOfficeDays: number | null;
+  aiRemoteLocation: string[];
+  aiRemoteLocationDerived: string[];
+  aiKeySkills: string[];
+  aiCoreResponsibilities: string | null;
+  aiRequirementsSummary: string | null;
+  aiHiringManagerName: string | null;
+  aiHiringManagerEmailAddress: string | null;
+  aiWorkingHours: number | null;
+  aiEmploymentType: string[];
+  aiJobLanguage: string | null;
+  aiVisaSponsorship: boolean | null;
+  
   organization: {
     id: string;
     name: string;
     logo: string | null;
     url: string | null;
     linkedinIndustry: string | null;
+    linkedinSlogan: string | null;
+    linkedinRecruitmentAgency: boolean | null;
   };
 }
 
@@ -256,18 +281,69 @@ export default function JobDetailClient({ job }: { job: Job }) {
     }
   };
 
-  const formatSalary = () => {
+  const formatAISalary = () => {
+    // Use AI-parsed salary data first if available
+    if (job.aiSalaryCurrency || job.aiSalaryValue || job.aiSalaryMinValue || job.aiSalaryMaxValue) {
+      const parts = [];
+      
+      if (job.aiSalaryMinValue && job.aiSalaryMaxValue) {
+        parts.push(`$${job.aiSalaryMinValue.toLocaleString()} - $${job.aiSalaryMaxValue.toLocaleString()}`);
+      } else if (job.aiSalaryValue) {
+        parts.push(`$${job.aiSalaryValue.toLocaleString()}`);
+      }
+      
+      if (job.aiSalaryUnitText) {
+        parts.push(`per ${job.aiSalaryUnitText.toLowerCase()}`);
+      }
+      
+      if (job.aiSalaryCurrency && job.aiSalaryCurrency !== 'USD') {
+        parts.push(`(${job.aiSalaryCurrency})`);
+      }
+      
+      return parts.length > 0 ? parts.join(' ') : null;
+    }
+    
+    // Fallback to raw salary data
     if (!job.salaryRaw) return null;
-    // salaryRaw is a JSON field that might contain salary information
-    // The structure depends on your API response format
     try {
       if (typeof job.salaryRaw === 'string') {
         return job.salaryRaw;
       }
-      // Add more parsing logic here based on your actual data structure
       return JSON.stringify(job.salaryRaw);
     } catch {
       return null;
+    }
+  };
+
+  const getWorkArrangementColor = (arrangement: string | null) => {
+    if (!arrangement) return 'bg-gray-100 text-gray-800';
+    switch (arrangement.toLowerCase()) {
+      case 'remote solely':
+        return 'bg-green-100 text-green-800';
+      case 'remote ok':
+        return 'bg-blue-100 text-blue-800';
+      case 'hybrid':
+        return 'bg-purple-100 text-purple-800';
+      case 'on-site':
+        return 'bg-orange-100 text-orange-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getExperienceLevelColor = (level: string | null) => {
+    if (!level) return 'bg-gray-100 text-gray-800';
+    switch (level) {
+      case '0-2':
+        return 'bg-green-100 text-green-800';
+      case '2-5':
+        return 'bg-blue-100 text-blue-800';
+      case '5-10':
+        return 'bg-purple-100 text-purple-800';
+      case '10+':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -405,14 +481,159 @@ export default function JobDetailClient({ job }: { job: Job }) {
                 </div>
               )}
 
-              {formatSalary() && (
+              {formatAISalary() && (
                 <div className="sm:col-span-2">
-                  <dt className="text-sm font-medium text-gray-500">Salary Range</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{formatSalary()}</dd>
+                  <dt className="text-sm font-medium text-gray-500">
+                    Salary Range 
+                    {(job.aiSalaryCurrency || job.aiSalaryValue || job.aiSalaryMinValue || job.aiSalaryMaxValue) && (
+                      <span className="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                        AI Parsed
+                      </span>
+                    )}
+                  </dt>
+                  <dd className="mt-1 text-sm text-gray-900 font-medium">{formatAISalary()}</dd>
                 </div>
               )}
             </dl>
           </div>
+
+          {/* AI Insights */}
+          {(job.aiExperienceLevel || job.aiWorkArrangement || job.aiKeySkills.length > 0 || job.aiCoreResponsibilities || job.aiRequirementsSummary || job.aiBenefits.length > 0) && (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow p-6 border border-blue-200">
+              <div className="flex items-center mb-4">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <h2 className="text-lg font-medium text-gray-900">AI-Powered Analysis</h2>
+                </div>
+                <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  Powered by AI
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {job.aiExperienceLevel && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700 mb-1">Experience Level</dt>
+                    <dd>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getExperienceLevelColor(job.aiExperienceLevel)}`}>
+                        {job.aiExperienceLevel} years
+                      </span>
+                    </dd>
+                  </div>
+                )}
+
+                {job.aiWorkArrangement && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700 mb-1">Work Arrangement</dt>
+                    <dd>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getWorkArrangementColor(job.aiWorkArrangement)}`}>
+                        {job.aiWorkArrangement}
+                      </span>
+                      {job.aiWorkArrangementOfficeDays && job.aiWorkArrangement?.toLowerCase() === 'hybrid' && (
+                        <span className="ml-2 text-xs text-gray-600">
+                          ({job.aiWorkArrangementOfficeDays} days/week in office)
+                        </span>
+                      )}
+                    </dd>
+                  </div>
+                )}
+
+                {job.aiWorkingHours && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700 mb-1">Working Hours</dt>
+                    <dd className="text-sm text-gray-900">{job.aiWorkingHours} hours/week</dd>
+                  </div>
+                )}
+
+                {job.aiJobLanguage && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700 mb-1">Job Language</dt>
+                    <dd className="text-sm text-gray-900">{job.aiJobLanguage}</dd>
+                  </div>
+                )}
+
+                {job.aiVisaSponsorship !== null && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700 mb-1">Visa Sponsorship</dt>
+                    <dd>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        job.aiVisaSponsorship ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {job.aiVisaSponsorship ? 'Available' : 'Not Available'}
+                      </span>
+                    </dd>
+                  </div>
+                )}
+
+                {job.aiEmploymentType.length > 0 && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700 mb-1">AI Employment Type</dt>
+                    <dd className="text-sm text-gray-900 capitalize">{job.aiEmploymentType.join(', ').replace(/_/g, ' ')}</dd>
+                  </div>
+                )}
+              </div>
+
+              {job.aiKeySkills.length > 0 && (
+                <div className="mb-4">
+                  <dt className="text-sm font-medium text-gray-700 mb-2">Key Skills Identified</dt>
+                  <dd className="flex flex-wrap gap-2">
+                    {job.aiKeySkills.map((skill, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-white text-gray-800 border border-gray-300"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </dd>
+                </div>
+              )}
+
+              {job.aiBenefits.length > 0 && (
+                <div className="mb-4">
+                  <dt className="text-sm font-medium text-gray-700 mb-2">Benefits Identified</dt>
+                  <dd>
+                    <ul className="text-sm text-gray-900 space-y-1">
+                      {job.aiBenefits.map((benefit, index) => (
+                        <li key={index} className="flex items-center">
+                          <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          {benefit}
+                        </li>
+                      ))}
+                    </ul>
+                  </dd>
+                </div>
+              )}
+
+              {job.aiCoreResponsibilities && (
+                <div className="mb-4">
+                  <dt className="text-sm font-medium text-gray-700 mb-1">Core Responsibilities Summary</dt>
+                  <dd className="text-sm text-gray-900 p-3 bg-white rounded border">{job.aiCoreResponsibilities}</dd>
+                </div>
+              )}
+
+              {job.aiRequirementsSummary && (
+                <div className="mb-4">
+                  <dt className="text-sm font-medium text-gray-700 mb-1">Requirements Summary</dt>
+                  <dd className="text-sm text-gray-900 p-3 bg-white rounded border">{job.aiRequirementsSummary}</dd>
+                </div>
+              )}
+
+              {(job.aiHiringManagerName || job.aiHiringManagerEmailAddress) && (
+                <div>
+                  <dt className="text-sm font-medium text-gray-700 mb-1">Hiring Manager Contact</dt>
+                  <dd className="text-sm text-gray-900">
+                    {job.aiHiringManagerName && <div>Name: {job.aiHiringManagerName}</div>}
+                    {job.aiHiringManagerEmailAddress && <div>Email: {job.aiHiringManagerEmailAddress}</div>}
+                  </dd>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Job Description */}
           <div className="bg-white rounded-lg shadow p-6">
@@ -455,6 +676,14 @@ export default function JobDetailClient({ job }: { job: Job }) {
                 </Link>
                 {job.organization.linkedinIndustry && (
                   <p className="text-sm text-gray-500 mt-1">{job.organization.linkedinIndustry}</p>
+                )}
+                {job.organization.linkedinSlogan && (
+                  <p className="text-sm text-gray-400 mt-1 italic">&ldquo;{job.organization.linkedinSlogan}&rdquo;</p>
+                )}
+                {job.organization.linkedinRecruitmentAgency && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mt-2">
+                    Recruitment Agency
+                  </span>
                 )}
               </div>
 

@@ -21,6 +21,8 @@ export function mapApiToOrganization(
     linkedinSpecialties: apiJob.linkedin_org_specialties || [],
     linkedinLocations: apiJob.linkedin_org_locations || [],
     linkedinDescription: apiJob.linkedin_org_description || null,
+    linkedinSlogan: apiJob.linkedin_org_slogan || null,
+    linkedinRecruitmentAgency: apiJob.linkedin_org_recruitment_agency_derived || null,
   };
 }
 
@@ -58,6 +60,29 @@ export function mapApiToJob(
     sourceType: apiJob.source_type || null,
     source: apiJob.source || null,
     sourceDomain: apiJob.source_domain || null,
+    
+    // AI-powered analysis fields
+    aiSalaryCurrency: apiJob.ai_salary_currency || null,
+    aiSalaryValue: apiJob.ai_salary_value || null,
+    aiSalaryMinValue: apiJob.ai_salary_minvalue || null,
+    aiSalaryMaxValue: apiJob.ai_salary_maxvalue || null,
+    aiSalaryUnitText: apiJob.ai_salary_unittext || null,
+    aiBenefits: apiJob.ai_benefits || [],
+    aiExperienceLevel: apiJob.ai_experience_level || null,
+    aiWorkArrangement: apiJob.ai_work_arrangement || null,
+    aiWorkArrangementOfficeDays: apiJob.ai_work_arrangement_office_days || null,
+    aiRemoteLocation: apiJob.ai_remote_location || [],
+    aiRemoteLocationDerived: apiJob.ai_remote_location_derived || [],
+    aiKeySkills: apiJob.ai_key_skills || [],
+    aiCoreResponsibilities: apiJob.ai_core_responsibilities || null,
+    aiRequirementsSummary: apiJob.ai_requirements_summary || null,
+    aiHiringManagerName: apiJob.ai_hiring_manager_name || null,
+    aiHiringManagerEmailAddress: apiJob.ai_hiring_manager_email_address || null,
+    aiWorkingHours: apiJob.ai_working_hours || null,
+    aiEmploymentType: apiJob.ai_employment_type || [],
+    aiJobLanguage: apiJob.ai_job_language || null,
+    aiVisaSponsorship: apiJob.ai_visa_sponsorship || null,
+    
     lastFetchedAt: new Date(),
   };
 }

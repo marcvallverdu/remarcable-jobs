@@ -43,6 +43,29 @@ export interface FantasticJobsResponse {
   linkedin_org_locations?: string[];
   linkedin_org_description?: string;
   linkedin_org_slug?: string;
+  linkedin_org_recruitment_agency_derived?: boolean;
+  
+  // AI-powered analysis fields
+  ai_salary_currency?: string;
+  ai_salary_value?: number;
+  ai_salary_minvalue?: number;
+  ai_salary_maxvalue?: number;
+  ai_salary_unittext?: string;
+  ai_benefits?: string[];
+  ai_experience_level?: string;
+  ai_work_arrangement?: string;
+  ai_work_arrangement_office_days?: number;
+  ai_remote_location?: string[];
+  ai_remote_location_derived?: string[];
+  ai_key_skills?: string[];
+  ai_hiring_manager_name?: string;
+  ai_hiring_manager_email_address?: string;
+  ai_core_responsibilities?: string;
+  ai_requirements_summary?: string;
+  ai_working_hours?: number;
+  ai_employment_type?: string[];
+  ai_job_language?: string;
+  ai_visa_sponsorship?: boolean;
 }
 
 export interface LocationRaw {

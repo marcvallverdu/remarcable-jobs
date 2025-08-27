@@ -30,6 +30,8 @@ model Organization {
   linkedinSpecialties   String[]
   linkedinLocations     String[]
   linkedinDescription   String?  @db.Text
+  linkedinSlogan        String?
+  linkedinRecruitmentAgency Boolean?
   
   // Relations
   jobs                  Job[]
@@ -74,6 +76,28 @@ model Job {
   sourceType           String?
   source               String?
   sourceDomain         String?
+  
+  // AI-powered analysis fields
+  aiSalaryCurrency             String?
+  aiSalaryValue                Float?
+  aiSalaryMinValue             Float?
+  aiSalaryMaxValue             Float?
+  aiSalaryUnitText             String?
+  aiBenefits                   String[]
+  aiExperienceLevel            String?
+  aiWorkArrangement            String?
+  aiWorkArrangementOfficeDays  Int?
+  aiRemoteLocation             String[]
+  aiRemoteLocationDerived      String[]
+  aiKeySkills                  String[]
+  aiCoreResponsibilities       String?  @db.Text
+  aiRequirementsSummary        String?  @db.Text
+  aiHiringManagerName          String?
+  aiHiringManagerEmailAddress  String?
+  aiWorkingHours               Int?
+  aiEmploymentType             String[]
+  aiJobLanguage                String?
+  aiVisaSponsorship            Boolean?
   
   // Relations
   jobBoards            JobBoardJob[]
